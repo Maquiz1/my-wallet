@@ -15,7 +15,9 @@ env.read_env(BASE_DIR / ".env")
 # Security
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env.bool("DEBUG", default=False)
-ALLOWED_HOSTS = ast.literal_eval(env("ALLOWED_HOSTS", default="[]"))
+# ALLOWED_HOSTS = ast.literal_eval(env("ALLOWED_HOSTS", default="[]"))
+ALLOWED_HOSTS = env("ALLOWED_HOSTS", default="").split(",")
+
 
 # Database settings based on DEBUG
 # if DEBUG:
