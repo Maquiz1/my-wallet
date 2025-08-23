@@ -3,6 +3,7 @@ import environ
 import os
 import ast
 from django.contrib.messages import constants as messages
+from tzlocal import get_localzone  # make sure tzlocal is installed in your venv
 
 # Paths
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -94,10 +95,11 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Internationalization
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+LANGUAGE_CODE = env('LANGUAGE_CODE', default='en-us')
+TIME_ZONE = env('TIME_ZONE', default=str(get_localzone()))  # server's timezone as fallback
 USE_I18N = True
 USE_TZ = True
+
 
 # Static and media files
 STATIC_URL = 'static/'
