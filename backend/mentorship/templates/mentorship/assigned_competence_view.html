@@ -33,26 +33,16 @@
 <hr>
 
 <h3>Actions</h3>
-
 <ul>
-  <li>
-    <a href="{% url 'mentorship:assigned-competence-edit' assignment.id %}">✏️ Edit Assignment</a>
-  </li>
-
-  {% if not assignment.is_self_assessed %}
-    <li>
-      <a href="{% url 'mentorship:mentee-self-assess' assignment.id %}">📝 Self Assess</a>
-    </li>
-  {% elif not assignment.mentor_grade %}
-    <li>
-      <a href="{% url 'mentorship:mentee-self-assess' assignment.id %}">✏️ Edit Self Assessment</a>
-    </li>
-  {% endif %}
-
-  {% if assignment.is_self_assessed and not assignment.mentor_grade %}
-    <li>
-      <a href="{% url 'mentorship:mentor-grade' assignment.id %}">✅ Mentor Grade</a>
-    </li>
+  {% if is_admin %}
+    <li><a href="{% url 'mentorship:assigned-competence-edit' assignment.id %}">✏️ Edit Assignment</a></li>
+    {% if assignment.is_self_assessed and not assignment.mentor_grade %}
+      <li><a href="{% url 'mentorship:mentor-grade' assignment.id %}">✅ Mentor Grade</a></li>
+    {% endif %}
+  {% else %}
+    {% if request.user == assignment.mentee %}
+      <li><a href="{% url 'mentorship:mentee-self-assess' assignment.id %}">📝 Self Assess</a></li>
+    {% endif %}
   {% endif %}
 </ul>
 

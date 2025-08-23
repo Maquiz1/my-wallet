@@ -40,6 +40,9 @@ Dashboard — {{ user.get_full_name|default:user.username }}
             </div>
             <div class="card-footer bg-transparent border-0">
                 <a href="{% url 'mentorship:visit-list' %}" class="text-white text-decoration-underline">View visits</a>
+                {% if is_admin %}
+                    | <a href="{% url 'mentorship:add-visit' %}" class="text-white text-decoration-underline">Add Visit</a>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -67,6 +70,9 @@ Dashboard — {{ user.get_full_name|default:user.username }}
                 <th>Mentor</th>
                 <th>Start Date</th>
                 <th>End Date</th>
+                {% if is_admin %}
+                <th>Actions</th>
+                {% endif %}
             </tr>
         </thead>
         <tbody>
@@ -74,12 +80,18 @@ Dashboard — {{ user.get_full_name|default:user.username }}
             <tr>
                 <td>{{ visit.site.name }}</td>
                 <td>{{ visit.mentor.get_full_name }}</td>
-                <td>{{ visit.start_date }}</td>
-                <td>{{ visit.end_date }}</td>
+                <td>{{ visit.start_date|date:"M d, Y" }}</td>
+                <td>{{ visit.end_date|date:"M d, Y" }}</td>
+                {% if is_admin %}
+                <td>
+                    <a href="{% url 'mentorship:visit-detail' visit.pk %}">View</a> |
+                    <a href="{% url 'mentorship:delete-visit' visit.pk %}" class="text-danger">Delete</a>
+                </td>
+                {% endif %}
             </tr>
             {% empty %}
             <tr>
-                <td colspan="4">No recent mentorship visits found.</td>
+                <td colspan="5">No recent mentorship visits found.</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -90,6 +102,9 @@ Dashboard — {{ user.get_full_name|default:user.username }}
 <div class="card">
     <div class="card-body">
         <ul class="list-group list-group-flush">
+            {% comment %}
+            Replace these with actual recent activity logs later.
+            {% endcomment %}
             <li class="list-group-item">Mentee Jane submitted a new assessment.</li>
             <li class="list-group-item">Mentor John added a new visit to Dodoma.</li>
             <li class="list-group-item">New disease “X-Syndrome” added to the system.</li>
@@ -99,7 +114,6 @@ Dashboard — {{ user.get_full_name|default:user.username }}
 {% endblock %}
 
 {% block extra_scripts %}
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     const visitsCtx = document.getElementById('visitsChart');

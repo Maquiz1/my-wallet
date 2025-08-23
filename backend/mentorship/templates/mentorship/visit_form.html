@@ -1,7 +1,9 @@
 {% extends 'base.html' %}
+
 {% block content %}
 <h2 class="mb-4">Add New Visit</h2>
 
+{% if is_admin %}
 <form method="post" class="needs-validation" novalidate>
   {% csrf_token %}
   {{ form.non_field_errors }}
@@ -29,6 +31,12 @@
     <a href="{% url 'dashboard:dashboard' %}" class="btn btn-outline-primary">Back to Dashboard</a>
   </div>
 </form>
+{% else %}
+<p class="alert alert-warning">
+    You do not have permission to create a new visit.
+</p>
+<a href="{% url 'mentorship:visit-list' %}" class="btn btn-secondary me-2">Back to Visit List</a>
+{% endif %}
 
 <script>
 // Bootstrap 5 validation example (optional)

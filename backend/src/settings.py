@@ -127,25 +127,30 @@ else:
     EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
     DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL")
 
-import re
-class NeutralizePath:
-    _ctrl = re.compile(r'[\x00-\x1f\x7f]')
-    def filter(self, record):
-        req = getattr(record, 'request', None)
-        if req and getattr(req, 'path', None):
-            req.path = self._ctrl.sub('_', req.path)
-        return True
 
 LOGGING = {
-  "version": 1,
-  "filters": {"neutralize_path": {"()": "path.to.NeutralizePath"}},
-  "handlers": {
-    "console": {"class": "logging.StreamHandler", "filters": ["neutralize_path"]},
-  },
-  "loggers": {
-    "django.server": {"handlers": ["console"], "level": "INFO", "propagate": False},
-  },
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "neutralize_path": {
+            "()": "src.logging_filters.NeutralizePath"
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "filters": ["neutralize_path"],
+        },
+    },
+    "loggers": {
+        "django.server": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
 }
+
 
 # Message tags for Bootstrap compatibility
 MESSAGE_TAGS = {

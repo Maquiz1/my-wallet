@@ -20,21 +20,5 @@
   <button type="submit">Submit Grade</button>
 </form>
 
-<a href="{% url 'visit-day-detail' assignment.visit_day.id %}">🔙 Back to Visit Day</a>
+<a href="{% url 'mentorship:visit-day-detail' assignment.visit_day.id %}">🔙 Back to Visit Day</a>
 {% endblock %}
-
-<!-- <form method="post">
-  {% csrf_token %}
-  {{ form.as_p }}
-
-  <p><strong>Grading Guide:</strong></p>
-  <ul>
-    <li><strong>Excellent</strong> – Exceeds expectations</li>
-    <li><strong>Good</strong> – Meets expectations</li>
-    <li><strong>Fair</strong> – Needs improvement</li>
-    <li><strong>Poor</strong> – Below expectations</li>
-  </ul>
-
-  <button type="submit">Submit Grade</button>
-</form> -->
-

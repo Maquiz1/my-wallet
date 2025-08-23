@@ -4,7 +4,9 @@
 
   <p>
     <a href="{% url 'dashboard:dashboard' %}" class="btn btn-outline-secondary ms-2">Back to Dashboard</a>
-    <a href="{% url 'mentorship:add-visit' %}" class="btn btn-primary">+ Add New Visit</a>
+    {% if is_admin %}
+      <a href="{% url 'mentorship:add-visit' %}" class="btn btn-primary">+ Add New Visit</a>
+    {% endif %}
   </p>
 
   {% if visits %}
@@ -14,7 +16,9 @@
           <th>Mentor</th>
           <th>Site</th>
           <th>Visit Dates</th>
-          <th>View</th>  <!-- New column -->
+          {% if is_admin %}
+          <th>Actions</th>
+          {% endif %}
         </tr>
       </thead>
       <tbody>
@@ -23,7 +27,16 @@
             <td>{{ visit.mentor.get_full_name|default:visit.mentor.username }}</td>
             <td>{{ visit.site.name }}</td>
             <td>{{ visit.start_date|date:"M d, Y" }} – {{ visit.end_date|date:"M d, Y" }}</td>
-            <td><a href="{% url 'mentorship:visit-detail' visit.pk %}">View Details</a></td>  <!-- Link -->
+            {% if is_admin %}
+            <td>
+              <a href="{% url 'mentorship:visit-detail' visit.pk %}">View</a> |
+              <a href="{% url 'mentorship:delete-visit' visit.pk %}" class="text-danger">Delete</a>
+            </td>
+            {% else %}
+            <td>
+              <a href="{% url 'mentorship:visit-detail' visit.pk %}">View</a>
+            </td>
+            {% endif %}
           </tr>
         {% endfor %}
       </tbody>

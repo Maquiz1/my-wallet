@@ -20,7 +20,7 @@
       <td>{{ a.competence.name }}</td>
       <td>{{ a.mentee.get_full_name|default:a.mentee.username }}</td>
       <td>{{ a.mentor_grade|default:"Not graded" }}</td>
-      <td>{{ a.mentee_self_grade|default:"Not self-assessed" }}</td>
+      <td>{{ a.mentee_grade|default:"Not self-assessed" }}</td>
       <td>
         <a href="{% url 'mentorship:assigned-competence-view' a.pk %}">🔍 View</a>
         {% if request.user == a.mentee and not a.mentor_grade %}

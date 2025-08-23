@@ -14,14 +14,18 @@
     <strong>Competence:</strong> {{ assignment.competence }}<br>
     <strong>Status:</strong> {% if assignment.is_completed %}✅ Completed{% else %}⏳ Pending{% endif %}<br>
 
-    <a href="{% url 'mentorship:assigned-competence-edit' assignment.id %}">Edit</a> |
-    {% if assignment.is_self_assessed %}
-    <a href="{% url 'mentorship:mentor-grade' assignment.id %}">Mentor Grade</a> |
-    {% else %}
-    <span style="color:gray;">Mentor Grade (awaiting self-assessment)</span> |
+    {% if request.user == visit_day.visit.mentor %}
+      <a href="{% url 'mentorship:assigned-competence-edit' assignment.id %}">Edit</a> |
+      {% if assignment.is_self_assessed %}
+        <a href="{% url 'mentorship:mentor-grade' assignment.id %}">Mentor Grade</a> |
+      {% else %}
+        <span style="color:gray;">Mentor Grade (awaiting self-assessment)</span> |
+      {% endif %}
+      <a href="{% url 'mentorship:mentee-self-assess' assignment.id %}">Self Assess</a> |
+    {% elif request.user == assignment.mentee %}
+      <a href="{% url 'mentorship:mentee-self-assess' assignment.id %}">Self Assess</a> |
     {% endif %}
 
-    <a href="{% url 'mentorship:mentee-self-assess' assignment.id %}">Self Assess</a> |
     <a href="{% url 'mentorship:assigned-competence-view' assignment.id %}">View Assessment</a>
   </li>
   <hr>
@@ -30,7 +34,10 @@
   {% endfor %}
 </ul>
 
-<a href="{% url 'mentorship:assign-competence' visit_day.id %}">➕ Assign Competence</a><br>
-<a href="{% url 'mentorship:visit-detail' visit_day.visit.id %}">🔙 Back to Visit</a>
+{% if request.user == visit_day.visit.mentor %}
+<a href="{% url 'mentorship:assign-competence' visit_day.id %}" class="btn btn-primary">➕ Assign Competence</a><br>
+{% endif %}
+
+<a href="{% url 'mentorship:visit-detail' visit_day.visit.id %}" class="btn btn-secondary mt-2">🔙 Back to Visit</a>
 
 {% endblock %}
