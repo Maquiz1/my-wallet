@@ -119,8 +119,7 @@ class VisitDayDeleteView(LoginRequiredMixin, AdminCheckMixin, DeleteView):
         messages.success(self.request, "Visit Day deleted successfully.")
         return reverse_lazy('mentorship:visit-detail', kwargs={'pk': self.object.visit.pk})
 
-
-class AssignCompetenceView(LoginRequiredMixin, RoleRequiredMixin, AdminCheckMixin, CreateView):
+class AssignCompetenceView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
     model = AssignedCompetence
     form_class = AssignedCompetenceForm
     template_name = 'mentorship/assign_competence.html'
@@ -140,28 +139,21 @@ class AssignCompetenceView(LoginRequiredMixin, RoleRequiredMixin, AdminCheckMixi
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['visit_day'] = self.visit_day  # ✅ Make visit_day available in template
+        context['assigned_competences'] = AssignedCompetence.objects.filter(visit_day=self.visit_day)
         return context
-
-    def get_form(self, *args, **kwargs):
-        form = super().get_form(*args, **kwargs)
-        # Filter mentees who haven't been assigned this competence yet
-        assigned_mentees = AssignedCompetence.objects.filter(visit_day=self.visit_day).values_list('mentee_id', flat=True)
-        form.fields['mentee'].queryset = User.objects.exclude(id__in=assigned_mentees)
-        return form
 
     def form_valid(self, form):
         form.instance.assigned_by = self.request.user
-        messages.success(self.request, f"Competence {form.instance.competence} assigned to {form.instance.mentee.get_full_name()}!")
+        form.instance.visit_day = self.visit_day  # ✅ ensure visit_day is set
+        messages.success(
+            self.request, 
+            f"Competence {form.instance.competence} assigned to {form.instance.mentee.get_full_name()}!"
+        )
         return super().form_valid(form)
 
     def get_success_url(self):
-        # Redirect back to assign more if there are remaining mentees
-        unassigned = User.objects.exclude(
-            id__in=AssignedCompetence.objects.filter(visit_day=self.visit_day).values_list('mentee_id', flat=True)
-        )
-        if unassigned.exists():
-            return reverse('mentorship:assign-competence', kwargs={'visit_day_id': self.visit_day.id})
-        return reverse('mentorship:visit-day-detail', kwargs={'visit_day_id': self.visit_day.id})
+        # Always redirect back to the same page so mentor can keep assigning more
+        return reverse('mentorship:assign-competence', kwargs={'visit_day_id': self.visit_day.id})
 
 
 class AssignedCompetenceDetailView(LoginRequiredMixin, AdminCheckMixin, DetailView):
@@ -178,27 +170,39 @@ class AssignedCompetenceUpdateView(LoginRequiredMixin, AdminCheckMixin, UpdateVi
     def get_success_url(self):
         return reverse('mentorship:visit-day-detail', kwargs={'visit_day_id': self.object.visit_day.id})
 
-
 class MentorGradeView(LoginRequiredMixin, AdminCheckMixin, RoleRequiredMixin, UpdateView):
     model = AssignedCompetence
     form_class = MentorGradeForm
-    template_name = 'mentorship/mentor_grade_form.html'
+    template_name = 'mentorship/mentor_grade.html'
     role_required = 'Mentor'
+    context_object_name = 'assignment'
 
     def dispatch(self, request, *args, **kwargs):
         obj = self.get_object()
+        # Only the mentor assigned to this visit can grade
         if obj.visit_day.visit.mentor != request.user:
             return HttpResponseForbidden("Not authorized to grade this assignment.")
+        # Ensure mentee has self-assessed first
         if not obj.is_self_assessed:
             return HttpResponseForbidden("Cannot grade before mentee self-assessment.")
         return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Provide mentee's self-assessment for display
+        context['mentee_grade'] = self.object.mentee_grade
+        context['mentee_remarks'] = self.object.mentee_remarks
+        return context
 
     def form_valid(self, form):
         form.instance.is_completed = True
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse('mentorship:visit-day-detail', kwargs={'visit_day_id': self.object.visit_day.id})
+        return reverse(
+            'mentorship:visit-day-detail', 
+            kwargs={'visit_day_id': self.object.visit_day.id}
+        )
 
 
 class MenteeSelfAssessmentView(LoginRequiredMixin, AdminCheckMixin, RoleRequiredMixin, UpdateView):

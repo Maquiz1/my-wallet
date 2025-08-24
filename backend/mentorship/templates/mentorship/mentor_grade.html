@@ -4,6 +4,14 @@
 
 <p><strong>Mentee:</strong> {{ assignment.mentee.get_full_name|default:assignment.mentee.username }}</p>
 
+{% if mentee_grade or mentee_remarks %}
+  <div class="card mb-4 p-3 bg-light border">
+    <h5>Mentee Self-Assessment</h5>
+    <p><strong>Grade:</strong> {{ mentee_grade|default:"Not assessed yet" }}</p>
+    <p><strong>Remarks:</strong> {{ mentee_remarks|default:"No remarks" }}</p>
+  </div>
+{% endif %}
+
 <form method="post">
   {% csrf_token %}
   {{ form.as_p }}
@@ -17,8 +25,8 @@
     <li><strong>5</strong> - Excellent</li>
   </ul>
 
-  <button type="submit">Submit Grade</button>
+  <button type="submit" class="btn btn-primary">Submit Grade</button>
 </form>
 
-<a href="{% url 'mentorship:visit-day-detail' assignment.visit_day.id %}">🔙 Back to Visit Day</a>
+<a href="{% url 'mentorship:visit-day-detail' assignment.visit_day.id %}" class="btn btn-outline-secondary mt-3">🔙 Back to Visit Day</a>
 {% endblock %}

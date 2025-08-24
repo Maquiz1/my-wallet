@@ -1,48 +1,77 @@
 {% extends 'base.html' %}
+
 {% block content %}
 <h2 class="mb-4">Assign Competence for {{ visit_day.date }}</h2>
 
-<form method="post" class="needs-validation" novalidate>
-  {% csrf_token %}
-  {{ form.non_field_errors }}
+<!-- Assignment Form -->
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="post" class="needs-validation" novalidate>
+      {% csrf_token %}
+      {{ form.non_field_errors }}
 
-  {% for field in form %}
-    <div class="mb-3">
-      <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-      {{ field }}
-      {% if field.help_text %}
-        <div class="form-text">{{ field.help_text }}</div>
-      {% endif %}
-      {% for error in field.errors %}
-        <div class="invalid-feedback d-block">
-          {{ error }}
+      {% for field in form %}
+        <div class="mb-3">
+          <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}
+            <div class="form-text">{{ field.help_text }}</div>
+          {% endif %}
+          {% for error in field.errors %}
+            <div class="invalid-feedback d-block">
+              {{ error }}
+            </div>
+          {% endfor %}
         </div>
       {% endfor %}
-    </div>
-  {% endfor %}
 
-  <div class="mt-4">
-    <button type="submit" class="btn btn-success me-2">Assign</button>
-    <a href="{% url 'mentorship:visit-day-detail' visit_day.id %}" class="btn btn-outline-secondary">Back to Visit Day</a>
+      <div class="mt-4">
+        <button type="submit" class="btn btn-success me-2">Assign</button>
+        <a href="{% url 'mentorship:visit-day-detail' visit_day.id %}" class="btn btn-outline-secondary">Back to Visit Day</a>
+      </div>
+    </form>
   </div>
-</form>
+</div>
 
+<!-- Already Assigned Competences -->
 <hr class="my-5">
-
 <h3>Existing Assignments</h3>
+
 {% if assignments %}
-  <ul class="list-group mb-3">
-    {% for assignment in assignments %}
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-        <span>
-          {{ assignment.mentee }} — {{ assignment.competence }}
-        </span>
-        <span class="badge bg-{{ assignment.is_completed|yesno:'success,secondary' }}">
-          {{ assignment.get_is_completed_display|default:"Pending" }}
-        </span>
-      </li>
-    {% endfor %}
-  </ul>
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>Mentee</th>
+          <th>Competence</th>
+          <th>Status</th>
+          <th>Assigned By</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for assignment in assignments %}
+          <tr>
+            <td>{{ assignment.mentee }}</td>
+            <td>{{ assignment.competence }}</td>
+            <td>
+              <span class="badge bg-{{ assignment.is_completed|yesno:'success,secondary' }}">
+                {{ assignment.get_is_completed_display|default:"Pending" }}
+              </span>
+            </td>
+            <td>{{ assignment.assigned_by }}</td>
+            <td>
+              <a href="{% url 'mentorship:assigned-competence-delete' assignment.id %}"
+                 class="btn btn-sm btn-danger"
+                 onclick="return confirm('Remove this assignment?');">
+                Remove
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 {% else %}
   <p class="text-muted">No assignments yet.</p>
 {% endif %}
