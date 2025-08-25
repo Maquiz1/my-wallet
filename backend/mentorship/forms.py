@@ -82,7 +82,7 @@ class MentorGradeForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)  # capture current user
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
         # Only the mentor assigned to the visit can see these fields
@@ -90,10 +90,7 @@ class MentorGradeForm(forms.ModelForm):
             for field in self.fields:
                 self.fields[field].widget = forms.HiddenInput()
 
-        # Make fields read-only if already graded
-        if self.instance.mentor_grade:
-            for field in self.fields:
-                self.fields[field].disabled = True
+        # ✅ Do NOT disable fields here
 
 
 

@@ -6,38 +6,38 @@
   <p><strong>Mentee:</strong> {{ assignment.mentee.get_full_name|default:assignment.mentee.username }}</p>
 
   <table class="table table-bordered">
-    <thead class="table-dark">
-      <tr>
-        <th>Aspect</th>
-        <th>Mentee Self-Assessment</th>
-        <th>Mentor Grade</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Grade</td>
-        <td>{{ assignment.mentee_grade|default:"Not yet assessed" }}</td>
-        <td>
-          {% if form.mentor_grade.field.widget.attrs.disabled %}
-              <input type="text" class="form-control bg-light" value="{{ assignment.mentor_grade }}" readonly>
-          {% else %}
-              {{ form.mentor_grade }}
-          {% endif %}
-        </td>
-      </tr>
-      <tr>
-        <td>Remarks</td>
-        <td>{{ assignment.mentee_remarks|default:"No remarks" }}</td>
-        <td>
-          {% if form.mentor_remarks.field.widget.attrs.disabled %}
-              <textarea class="form-control bg-light" rows="3" readonly>{{ assignment.mentor_remarks }}</textarea>
-          {% else %}
-              {{ form.mentor_remarks }}
-          {% endif %}
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <thead class="table-dark">
+    <tr>
+      <th>Aspect</th>
+      <th>Mentee Self-Assessment</th>
+      <th>Mentor Grade</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Grade</td>
+      <td>{{ assignment.mentee_grade|default:"Not yet assessed" }}</td>
+      <td>
+        {% if assignment.mentor_grade %}
+          <input type="text" class="form-control bg-light" value="{{ assignment.mentor_grade }}" readonly>
+        {% else %}
+          {{ form.mentor_grade }}
+        {% endif %}
+      </td>
+    </tr>
+    <tr>
+      <td>Remarks</td>
+      <td>{{ assignment.mentee_remarks|default:"No remarks" }}</td>
+      <td>
+        {% if assignment.mentor_remarks %}
+          <textarea class="form-control bg-light" rows="3" readonly>{{ assignment.mentor_remarks }}</textarea>
+        {% else %}
+          {{ form.mentor_remarks }}
+        {% endif %}
+      </td>
+    </tr>
+  </tbody>
+</table>
 
   <form method="post">
     {% csrf_token %}
