@@ -117,10 +117,10 @@ Dashboard — {{ user.get_full_name|default:user.username }}
 {% block extra_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-const visitsChartData = {{ visits_chart_data|safe }};
-const visitsChartLabels = {{ visits_chart_labels|safe }};
-let activityChartData = {{ activity_chart_data|safe }};
-const activityChartLabels = {{ activity_chart_labels|safe }};
+// const visitsChartData = {{ visits_chart_data|safe }};
+// const visitsChartLabels = {{ visits_chart_labels|safe }};
+// let activityChartData = {{ activity_chart_data|safe }};
+// const activityChartLabels = {{ activity_chart_labels|safe }};
 
 // Convert all activity data to integers, keeping zeros
 activityChartData = activityChartData.map(x => Math.floor(x));
