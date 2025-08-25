@@ -26,7 +26,7 @@ ALLOWED_HOSTS = [
 host.strip()
 for host in env("ALLOWED_HOSTS", default="").split(",")
 if host.strip()
-]
+# ]
     
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
