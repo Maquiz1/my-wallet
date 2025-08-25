@@ -119,8 +119,11 @@ Dashboard — {{ user.get_full_name|default:user.username }}
 <script>
 const visitsChartData = {{ visits_chart_data|safe }};
 const visitsChartLabels = {{ visits_chart_labels|safe }};
-const activityChartData = {{ activity_chart_data|safe }};
+let activityChartData = {{ activity_chart_data|safe }};
 const activityChartLabels = {{ activity_chart_labels|safe }};
+
+// Convert all activity data to integers, keeping zeros
+activityChartData = activityChartData.map(x => Math.floor(x));
 
 new Chart(document.getElementById('visitsChart'), {
     type: 'bar',
@@ -160,8 +163,14 @@ new Chart(document.getElementById('activityChart'), {
         plugins: {
             legend: { display: false },
             title: { display: true, text: 'Mentee Submissions (Last 7 Days)' }
+        },
+        scales: {
+            y: {
+                beginAtZero: true  // Ensures y-axis starts from 0
+            }
         }
     }
 });
 </script>
+
 {% endblock %}
