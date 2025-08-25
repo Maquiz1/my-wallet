@@ -16,6 +16,7 @@
           <th>Mentor</th>
           <th>Site</th>
           <th>Visit Dates</th>
+          <th>Status</th>
           {% if is_admin %}
           <th>Actions</th>
           {% endif %}
@@ -27,6 +28,17 @@
             <td>{{ visit.mentor.get_full_name|default:visit.mentor.username }}</td>
             <td>{{ visit.site.name }}</td>
             <td>{{ visit.start_date|date:"M d, Y" }} – {{ visit.end_date|date:"M d, Y" }}</td>
+            <td>
+              {% if visit.status == 'pending' %}
+                <span class="badge bg-secondary">Pending</span>
+              {% elif visit.status == 'assigned' %}
+                <span class="badge bg-info">In Progress</span>
+              {% elif visit.status == 'completed' %}
+                <span class="badge bg-success">Completed</span>
+              {% elif visit.status == 'reviewed' %}
+                <span class="badge bg-primary">Reviewed</span>
+              {% endif %}
+            </td>
             {% if is_admin %}
             <td>
               <a href="{% url 'mentorship:visit-detail' visit.pk %}">View</a> |

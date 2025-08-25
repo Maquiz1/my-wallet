@@ -12,18 +12,39 @@
   <li>
     <strong>Mentee:</strong> {{ assignment.mentee.get_full_name|default:assignment.mentee.username }}<br>
     <strong>Competence:</strong> {{ assignment.competence }}<br>
-    <strong>Status:</strong> {% if assignment.is_completed %}✅ Completed{% else %}⏳ Pending{% endif %}<br>
+    <strong>Status:</strong> 
+    {% if assignment.status == 'pending' %}
+      <span class="badge bg-secondary">Pending</span>
+    {% elif assignment.status == 'assigned' %}
+      <span class="badge bg-info">Assigned</span>
+    {% elif assignment.status == 'completed' %}
+      <span class="badge bg-success">Self-Assessed</span>
+    {% elif assignment.status == 'reviewed' %}
+      <span class="badge bg-primary">Reviewed</span>
+    {% endif %}<br>
 
-    {% if request.user == visit_day.visit.mentor %}
-      <a href="{% url 'mentorship:assigned-competence-edit' assignment.id %}">Edit</a> |
-      {% if assignment.is_self_assessed %}
+    {% if request.user.id == visit_day.visit.mentor.id %}
+      {# Edit allowed only until self-assessment starts #}
+      {% if assignment.status == 'pending' or assignment.status == 'assigned' %}
+        <a href="{% url 'mentorship:assigned-competence-edit' assignment.id %}">Edit</a> |
+      {% else %}
+        <span style="color:gray;">Edit (disabled)</span> |
+      {% endif %}
+
+      {# Mentor grade always visible, but form read-only after first grading #}
+      {% if assignment.status == 'completed' %}
         <a href="{% url 'mentorship:mentor-grade' assignment.id %}">Mentor Grade</a> |
+      {% elif assignment.status == 'reviewed' %}
+        <a href="{% url 'mentorship:mentor-grade' assignment.id %}">View Mentor Grade</a> |
       {% else %}
         <span style="color:gray;">Mentor Grade (awaiting self-assessment)</span> |
       {% endif %}
-      <a href="{% url 'mentorship:mentee-self-assess' assignment.id %}">Self Assess</a> |
     {% elif request.user == assignment.mentee %}
-      <a href="{% url 'mentorship:mentee-self-assess' assignment.id %}">Self Assess</a> |
+      {% if assignment.status != 'reviewed' %}
+        <a href="{% url 'mentorship:mentee-self-assess' assignment.id %}">Self Assess</a> |
+      {% else %}
+        <span style="color:gray;">Self Assess (disabled)</span> |
+      {% endif %}
     {% endif %}
 
     <a href="{% url 'mentorship:assigned-competence-view' assignment.id %}">View Assessment</a>
@@ -34,8 +55,8 @@
   {% endfor %}
 </ul>
 
-{% if request.user == visit_day.visit.mentor %}
-<a href="{% url 'mentorship:assign-competence' visit_day.id %}" class="btn btn-primary">➕ Assign Competence</a><br>
+{% if is_mentor %}
+  <a href="{% url 'mentorship:assign-competence' visit_day.id %}" class="btn btn-primary">➕ Assign Competence</a><br>
 {% endif %}
 
 <a href="{% url 'mentorship:visit-detail' visit_day.visit.id %}" class="btn btn-secondary mt-2">🔙 Back to Visit</a>

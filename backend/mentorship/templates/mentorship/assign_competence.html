@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
-
 {% block content %}
+
 <h2 class="mb-4">Assign Competence for {{ visit_day.date }}</h2>
 
 <!-- Assignment Form -->
+{% if is_mentor %}
 <div class="card mb-4">
   <div class="card-body">
     <form method="post" class="needs-validation" novalidate>
@@ -32,47 +33,63 @@
     </form>
   </div>
 </div>
+{% endif %}
 
-<!-- Already Assigned Competences -->
 <hr class="my-5">
 <h3>Existing Assignments</h3>
 
 {% if assignments %}
-  <div class="table-responsive">
-    <table class="table table-bordered table-striped align-middle">
-      <thead class="table-dark">
+<div class="table-responsive">
+  <table class="table table-bordered table-striped align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>Mentee</th>
+        <th>Competence</th>
+        <th>Status</th>
+        <th>Assigned By</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for assignment in assignments %}
         <tr>
-          <th>Mentee</th>
-          <th>Competence</th>
-          <th>Status</th>
-          <th>Assigned By</th>
-          <th>Action</th>
+          <td>{{ assignment.mentee.get_full_name|default:assignment.mentee.username }}</td>
+          <td>{{ assignment.competence }}</td>
+          <td>
+            {% if assignment.status == 'pending' %}
+              <span class="badge bg-secondary">Pending</span>
+            {% elif assignment.status == 'assigned' %}
+              <span class="badge bg-info">Assigned</span>
+            {% elif assignment.status == 'completed' %}
+              <span class="badge bg-success">Self-Assessed</span>
+            {% elif assignment.status == 'reviewed' %}
+              <span class="badge bg-primary">Reviewed</span>
+            {% endif %}
+          </td>
+          <td>{{ assignment.assigned_by.get_full_name|default:assignment.assigned_by.username }}</td>
+          <td>
+            {% if is_mentor %}
+              {% if assignment.status != 'completed' and assignment.status != 'reviewed' %}
+                <a href="{% url 'mentorship:assigned-competence-edit' assignment.id %}" class="btn btn-sm btn-primary">Edit</a>
+                <a href="{% url 'mentorship:assigned-competence-delete' assignment.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Remove this assignment?');">Remove</a>
+              {% else %}
+                <span class="text-muted">Edit / Remove Disabled</span>
+              {% endif %}
+            {% elif request.user == assignment.mentee %}
+              {% if assignment.status != 'reviewed' %}
+                <a href="{% url 'mentorship:mentee-self-assess' assignment.id %}" class="btn btn-sm btn-success">Self Assess</a>
+              {% else %}
+                <span class="text-muted">Self Assess Disabled</span>
+              {% endif %}
+            {% endif %}
+          </td>
         </tr>
-      </thead>
-      <tbody>
-        {% for assignment in assignments %}
-          <tr>
-            <td>{{ assignment.mentee }}</td>
-            <td>{{ assignment.competence }}</td>
-            <td>
-              <span class="badge bg-{{ assignment.is_completed|yesno:'success,secondary' }}">
-                {{ assignment.get_is_completed_display|default:"Pending" }}
-              </span>
-            </td>
-            <td>{{ assignment.assigned_by }}</td>
-            <td>
-              <a href="{% url 'mentorship:assigned-competence-delete' assignment.id %}"
-                 class="btn btn-sm btn-danger"
-                 onclick="return confirm('Remove this assignment?');">
-                Remove
-              </a>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% else %}
-  <p class="text-muted">No assignments yet.</p>
+<p class="text-muted">No assignments yet.</p>
 {% endif %}
+
 {% endblock %}

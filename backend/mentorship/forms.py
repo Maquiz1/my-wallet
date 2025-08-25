@@ -2,6 +2,7 @@
 from django import forms
 from .models import VisitDay, Visit, AssignedCompetence
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 
 User = get_user_model()
 
@@ -12,6 +13,7 @@ GRADE_CHOICES = [
     ('Fair', 'Fair'),
     ('Poor', 'Poor'),
 ]
+
 
 class VisitForm(forms.ModelForm):
     class Meta:
@@ -28,14 +30,23 @@ class VisitForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
-        # Only show users in Mentor group for the mentor dropdown
-        from django.contrib.auth.models import Group
-        mentor_group = Group.objects.get(name='Mentor')
-        self.fields['mentor'].queryset = mentor_group.user_set.all()
+        # Show only Mentors
+        try:
+            mentor_group = Group.objects.get(name='Mentor')
+            self.fields['mentor'].queryset = mentor_group.user_set.all()
+        except Group.DoesNotExist:
+            self.fields['mentor'].queryset = User.objects.none()
 
-        # Only admins can assign a mentor; others see it hidden
+        # Only Admin can assign mentors
         if user and not user.groups.filter(name='Admin').exists() and not user.is_superuser:
             self.fields['mentor'].widget = forms.HiddenInput()
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        # status handled in model logic: default = pending
+        if commit:
+            instance.save()
+        return instance
 
 
 class VisitDayForm(forms.ModelForm):
@@ -53,23 +64,37 @@ class VisitDayForm(forms.ModelForm):
             raise forms.ValidationError("Another VisitDay already exists with this date.")
         return date
 
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        # Status auto-handled in model: pending → in-progress → completed → reviewed
+        if commit:
+            instance.save()
+        return instance
+
 
 class MentorGradeForm(forms.ModelForm):
     class Meta:
         model = AssignedCompetence
         fields = ['mentor_grade', 'mentor_remarks']
         widgets = {
-            'mentor_grade': forms.Select(choices=GRADE_CHOICES),
+            'mentor_grade': forms.Select(choices=GRADE_CHOICES, attrs={'class': 'form-select'}),
             'mentor_remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
     def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
+        self.user = kwargs.pop('user', None)  # capture current user
         super().__init__(*args, **kwargs)
+
         # Only the mentor assigned to the visit can see these fields
-        if user and self.instance.visit_day.visit.mentor != user:
+        if self.user and self.instance.visit_day.visit.mentor != self.user:
             for field in self.fields:
                 self.fields[field].widget = forms.HiddenInput()
+
+        # Make fields read-only if already graded
+        if self.instance.mentor_grade:
+            for field in self.fields:
+                self.fields[field].disabled = True
+
 
 
 class MenteeSelfAssessmentForm(forms.ModelForm):
@@ -84,17 +109,26 @@ class MenteeSelfAssessmentForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        # Only the assigned mentee can see these fields
+        # Hide if not the mentee
         if user and self.instance.mentee != user:
             for field in self.fields:
                 self.fields[field].widget = forms.HiddenInput()
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        # After self-assessment → update statuses
+        if commit:
+            instance.save()
+            instance.visit_day.update_status()
+            instance.visit_day.visit.update_status()
+        return instance
 
 class AssignedCompetenceForm(forms.ModelForm):
     class Meta:
         model = AssignedCompetence
         fields = ['visit_day', 'mentee', 'disease', 'competence', 'mentor_remarks']
         widgets = {
-            'visit_day': forms.HiddenInput(),  # Pre-fill from URL, hidden from mentor
+            'visit_day': forms.HiddenInput(),  # Pre-filled
             'mentee': forms.Select(attrs={'class': 'form-select'}),
             'disease': forms.Select(attrs={'class': 'form-select'}),
             'competence': forms.Select(attrs={'class': 'form-select'}),
@@ -103,20 +137,20 @@ class AssignedCompetenceForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
-        visit_day = kwargs.pop('visit_day', None)  # Pass visit_day from view
+        visit_day = kwargs.pop('visit_day', None)
         super().__init__(*args, **kwargs)
 
-        # Only mentors can assign competencies
+        # Only mentors can assign
         if user and not user.groups.filter(name='Mentor').exists() and not user.is_superuser:
             for field in self.fields:
                 self.fields[field].widget = forms.HiddenInput()
 
-        # Pre-fill and hide visit_day
         if visit_day:
             self.fields['visit_day'].initial = visit_day
 
-        # Only show mentees (optional: you can filter by mentor’s site)
         self.fields['mentee'].queryset = User.objects.filter(groups__name='Mentee')
 
-        # Optional: you can filter competence by disease if needed
-        # self.fields['competence'].queryset = Competence.objects.all()
+        # Disable fields **only if the instance exists and self-assessed**
+        if self.instance.pk and self.instance.is_self_assessed:
+            for field_name in ['mentee', 'disease', 'competence']:
+                self.fields[field_name].disabled = True

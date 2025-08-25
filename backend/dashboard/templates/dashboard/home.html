@@ -79,7 +79,7 @@ Dashboard — {{ user.get_full_name|default:user.username }}
             {% for visit in recent_visits %}
             <tr>
                 <td>{{ visit.site.name }}</td>
-                <td>{{ visit.mentor.get_full_name }}</td>
+                <td>{{ visit.mentor.get_full_name|default:visit.mentor.username }}</td>
                 <td>{{ visit.start_date|date:"M d, Y" }}</td>
                 <td>{{ visit.end_date|date:"M d, Y" }}</td>
                 {% if is_admin %}
@@ -99,65 +99,69 @@ Dashboard — {{ user.get_full_name|default:user.username }}
 </div>
 
 <h3>📝 Recent Activity</h3>
-<div class="card">
-    <div class="card-body">
-        <ul class="list-group list-group-flush">
-            {% comment %}
-            Replace these with actual recent activity logs later.
-            {% endcomment %}
-            <li class="list-group-item">Mentee Jane submitted a new assessment.</li>
-            <li class="list-group-item">Mentor John added a new visit to Dodoma.</li>
-            <li class="list-group-item">New disease “X-Syndrome” added to the system.</li>
-        </ul>
-    </div>
-</div>
+<ul class="list-group list-group-flush">
+  {% for act in recent_activity %}
+    <li class="list-group-item">
+      {% if act.mentee %}
+        {{ act.mentee.get_full_name|default:act.mentee.username }} submitted assessment for {{ act.competence.name }}
+        ({{ act.visit_day.date|date:"M d, Y" }})
+      {% endif %}
+    </li>
+  {% empty %}
+    <li class="list-group-item">No recent activity.</li>
+  {% endfor %}
+</ul>
+
 {% endblock %}
 
 {% block extra_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const visitsCtx = document.getElementById('visitsChart');
-    new Chart(visitsCtx, {
-        type: 'bar',
-        data: {
-            labels: ['Dar', 'Dodoma', 'Mwanza', 'Arusha'],
-            datasets: [{
-                label: 'Visit Count',
-                data: [12, 7, 5, 8],
-                backgroundColor: 'rgba(54, 162, 235, 0.7)'
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { display: false },
-                title: { display: true, text: 'Visits per Site' }
-            }
-        }
-    });
+const visitsChartData = {{ visits_chart_data|safe }};
+const visitsChartLabels = {{ visits_chart_labels|safe }};
+const activityChartData = {{ activity_chart_data|safe }};
+const activityChartLabels = {{ activity_chart_labels|safe }};
 
-    const activityCtx = document.getElementById('activityChart');
-    new Chart(activityCtx, {
-        type: 'line',
-        data: {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-            datasets: [{
-                label: 'Submissions',
-                data: [3, 5, 2, 4, 6, 1, 0],
-                borderColor: 'rgba(255, 99, 132, 1)',
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                tension: 0.3,
-                fill: true,
-                pointRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { display: false },
-                title: { display: true, text: 'Mentee Submissions (Last 7 Days)' }
-            }
+new Chart(document.getElementById('visitsChart'), {
+    type: 'bar',
+    data: {
+        labels: visitsChartLabels,
+        datasets: [{
+            label: 'Visit Count',
+            data: visitsChartData,
+            backgroundColor: 'rgba(54, 162, 235, 0.7)'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            title: { display: true, text: 'Visits per Site' }
         }
-    });
+    }
+});
+
+new Chart(document.getElementById('activityChart'), {
+    type: 'line',
+    data: {
+        labels: activityChartLabels,
+        datasets: [{
+            label: 'Submissions',
+            data: activityChartData,
+            borderColor: 'rgba(255, 99, 132, 1)',
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            tension: 0.3,
+            fill: true,
+            pointRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            title: { display: true, text: 'Mentee Submissions (Last 7 Days)' }
+        }
+    }
+});
 </script>
 {% endblock %}

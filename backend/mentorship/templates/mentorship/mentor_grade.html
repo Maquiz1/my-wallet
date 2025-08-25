@@ -1,32 +1,51 @@
 {% extends 'base.html' %}
+
 {% block content %}
-<h2>Mentor Grading: {{ assignment.competence.name }}</h2>
+<div class="container mt-4">
+  <h2>Mentor Grading: {{ assignment.competence.name }}</h2>
+  <p><strong>Mentee:</strong> {{ assignment.mentee.get_full_name|default:assignment.mentee.username }}</p>
 
-<p><strong>Mentee:</strong> {{ assignment.mentee.get_full_name|default:assignment.mentee.username }}</p>
+  <table class="table table-bordered">
+    <thead class="table-dark">
+      <tr>
+        <th>Aspect</th>
+        <th>Mentee Self-Assessment</th>
+        <th>Mentor Grade</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Grade</td>
+        <td>{{ assignment.mentee_grade|default:"Not yet assessed" }}</td>
+        <td>
+          {% if form.mentor_grade.field.widget.attrs.disabled %}
+              <input type="text" class="form-control bg-light" value="{{ assignment.mentor_grade }}" readonly>
+          {% else %}
+              {{ form.mentor_grade }}
+          {% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td>Remarks</td>
+        <td>{{ assignment.mentee_remarks|default:"No remarks" }}</td>
+        <td>
+          {% if form.mentor_remarks.field.widget.attrs.disabled %}
+              <textarea class="form-control bg-light" rows="3" readonly>{{ assignment.mentor_remarks }}</textarea>
+          {% else %}
+              {{ form.mentor_remarks }}
+          {% endif %}
+        </td>
+      </tr>
+    </tbody>
+  </table>
 
-{% if mentee_grade or mentee_remarks %}
-  <div class="card mb-4 p-3 bg-light border">
-    <h5>Mentee Self-Assessment</h5>
-    <p><strong>Grade:</strong> {{ mentee_grade|default:"Not assessed yet" }}</p>
-    <p><strong>Remarks:</strong> {{ mentee_remarks|default:"No remarks" }}</p>
-  </div>
-{% endif %}
+  <form method="post">
+    {% csrf_token %}
+    {% if not form.mentor_grade.field.widget.attrs.disabled %}
+      <button type="submit" class="btn btn-primary">Submit Grade</button>
+    {% endif %}
+  </form>
 
-<form method="post">
-  {% csrf_token %}
-  {{ form.as_p }}
-
-  <p><strong>Grading Scale:</strong></p>
-  <ul>
-    <li><strong>1</strong> - Poor</li>
-    <li><strong>2</strong> - Fair</li>
-    <li><strong>3</strong> - Good</li>
-    <li><strong>4</strong> - Very Good</li>
-    <li><strong>5</strong> - Excellent</li>
-  </ul>
-
-  <button type="submit" class="btn btn-primary">Submit Grade</button>
-</form>
-
-<a href="{% url 'mentorship:visit-day-detail' assignment.visit_day.id %}" class="btn btn-outline-secondary mt-3">🔙 Back to Visit Day</a>
+  <a href="{% url 'mentorship:visit-day-detail' assignment.visit_day.id %}" class="btn btn-outline-secondary mt-3">🔙 Back to Visit Day</a>
+</div>
 {% endblock %}

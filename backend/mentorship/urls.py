@@ -14,6 +14,7 @@ from .views import (
     MentorGradeView,
     MenteeSelfAssessmentView,
     AllAssessmentsListView,
+    AssignedCompetenceDeleteView
 )
 
 app_name = 'mentorship'
@@ -43,6 +44,9 @@ urlpatterns = [
     # Mentor and Mentee actions
     path('assignment/<int:pk>/mentor-grade/', MentorGradeView.as_view(), name='mentor-grade'),       # Mentor only
     path('assignment/<int:pk>/self-assess/', MenteeSelfAssessmentView.as_view(), name='mentee-self-assess'),  # Mentee only
+    
+    # ✅ Add this delete path:
+    path('assigned-competence/<int:pk>/delete/', AssignedCompetenceDeleteView.as_view(), name='assigned-competence-delete'),
 
     # All assessments (Reviewer/Admin)
     path('assessments/', AllAssessmentsListView.as_view(), name='all-assessments'),
