@@ -7,6 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .models import Visit, VisitDay, AssignedCompetence
 from .forms import VisitForm, VisitDayForm, AssignedCompetenceForm, MentorGradeForm, MenteeSelfAssessmentForm,VisitDaySummaryForm
 from django.core.exceptions import PermissionDenied
+from django.http import JsonResponse
 
 from django.contrib.auth import get_user_model
 
@@ -146,13 +147,11 @@ class VisitDayDetailView(LoginRequiredMixin, DetailView):
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         visit_day = self.object
-        assignments = AssignedCompetence.objects.filter(
-            visit_day=visit_day
-        ).select_related('mentee', 'competence')
+        assignments = AssignedCompetence.objects.filter(visit_day=visit_day).select_related('mentee')
 
-        # Prepare forms
-        mentee_forms = []
         processed_mentees = set()
+        response_data = {'success': False}
+
         for assignment in assignments:
             mentee = assignment.mentee
             if mentee.id not in processed_mentees:
@@ -163,13 +162,16 @@ class VisitDayDetailView(LoginRequiredMixin, DetailView):
                     mentee=mentee,
                     prefix=str(mentee.id)
                 )
-                mentee_forms.append((mentee, form))
                 processed_mentees.add(mentee.id)
+                if form.is_valid():
+                    form.save()
+                    response_data['success'] = True
+                else:
+                    response_data['errors'] = form.errors
+                    return JsonResponse(response_data)
 
-        # Save valid forms
-        for mentee, form in mentee_forms:
-            if form.is_valid():
-                form.save()
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse(response_data)
 
         return redirect('mentorship:visit-day-detail', visit_day_id=visit_day.id)
 
