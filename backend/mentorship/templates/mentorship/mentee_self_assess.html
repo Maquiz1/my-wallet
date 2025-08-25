@@ -1,6 +1,15 @@
 {% extends 'base.html' %}
+
 {% block content %}
-<h2>Your Self-Assessment: {{ assignment.competence.name }}</h2>
+<h2>
+  Your Self-Assessment: 
+  {{ assignment.competence.name }}
+  {% if assignment.competence.description %}
+    – {{ assignment.competence.description }}
+  {% endif %}
+</h2>
+
+<p><strong>Patient ID (PID):</strong> {{ assignment.pid }}</p>
 
 <form method="post">
   {% csrf_token %}
@@ -15,8 +24,8 @@
     <li><strong>5</strong> - I can teach others</li>
   </ul>
 
-  <button type="submit">Submit Self-Assessment</button>
+  <button type="submit" class="btn btn-success">Submit Self-Assessment</button>
 </form>
 
-<a href="{% url 'mentorship:visit-day-detail' assignment.visit_day.id %}">🔙 Back to Visit Day</a>
+<a href="{% url 'mentorship:visit-day-detail' assignment.visit_day.id %}" class="btn btn-secondary mt-2">🔙 Back to Visit Day</a>
 {% endblock %}

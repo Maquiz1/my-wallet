@@ -177,6 +177,9 @@ class AssignedCompetence(models.Model):
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name="competences_assigned"
     )
 
+    # NEW FIELD for participant/patient ID
+    pid = models.CharField(max_length=50, blank=True, null=True, help_text="Patient/Participant ID")
+
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     is_completed = models.BooleanField(default=False)
 
@@ -209,7 +212,7 @@ class AssignedCompetence(models.Model):
             raise ValidationError(f"Mentee grade must be one of: {', '.join(valid_grades)}.")
 
     def __str__(self):
-        return f"{self.mentee} - {self.competence} ({self.status})"
+        return f"{self.mentee} - {self.competence} ({self.status}) [PID: {self.pid}]"
 
     # Status transition helpers
     def set_assigned(self, user=None):
@@ -236,3 +239,4 @@ class AssignedCompetence(models.Model):
 
     def is_self_assessed(self):
         return bool(self.mentee_grade)
+

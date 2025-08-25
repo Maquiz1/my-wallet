@@ -73,60 +73,64 @@ class VisitDayForm(forms.ModelForm):
             instance.save()
         return instance
 
+
 class MentorGradeForm(forms.ModelForm):
     class Meta:
         model = AssignedCompetence
-        fields = ['mentor_grade', 'mentor_remarks']
+        fields = ['mentor_grade', 'mentor_remarks', 'pid']   # Added PID here
         widgets = {
             'mentor_grade': forms.Select(choices=GRADE_CHOICES, attrs={'class': 'form-select'}),
             'mentor_remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'pid': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Patient ID'}),
         }
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
-        # Disable editing if already graded
+        # Disable grading fields if already graded
         if self.instance.pk and self.instance.mentor_grade:
-            for field in self.fields:
+            for field in ['mentor_grade', 'mentor_remarks']:
                 self.fields[field].widget.attrs['readonly'] = True
 
 
 class MenteeSelfAssessmentForm(forms.ModelForm):
     class Meta:
         model = AssignedCompetence
-        fields = ['mentee_grade', 'mentee_remarks']
+        fields = ['mentee_grade', 'mentee_remarks', 'pid']   # Added PID here
         widgets = {
             'mentee_grade': forms.Select(choices=GRADE_CHOICES),
             'mentee_remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'pid': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Patient ID'}),
         }
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        # Hide if not the mentee
+        # Hide fields if not the mentee
         if user and self.instance.mentee != user:
             for field in self.fields:
                 self.fields[field].widget = forms.HiddenInput()
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-        # After self-assessment → update statuses
         if commit:
             instance.save()
             instance.visit_day.update_status()
             instance.visit_day.visit.update_status()
         return instance
 
+
 class AssignedCompetenceForm(forms.ModelForm):
     class Meta:
         model = AssignedCompetence
-        fields = ['visit_day', 'mentee', 'disease', 'competence', 'mentor_remarks']
+        fields = ['visit_day', 'mentee', 'disease', 'competence', 'pid', 'mentor_remarks']  # Added PID here
         widgets = {
             'visit_day': forms.HiddenInput(),
             'mentee': forms.Select(attrs={'class': 'form-select'}),
             'disease': forms.Select(attrs={'class': 'form-select'}),
             'competence': forms.Select(attrs={'class': 'form-select'}),
+            'pid': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Patient ID'}),
             'mentor_remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
@@ -145,10 +149,11 @@ class AssignedCompetenceForm(forms.ModelForm):
 
         self.fields['mentee'].queryset = User.objects.filter(groups__name='Mentee')
 
-        # Display "NAME - DESCRIPTION" in competence dropdown
+        # Show "NAME - DESCRIPTION" in competence dropdown
         self.fields['competence'].label_from_instance = lambda obj: f"{obj.name} - {obj.description}" if obj.description else obj.name
 
-        # Disable fields only if instance exists and self-assessed
+        # Disable some fields if already self-assessed
         if self.instance.pk and self.instance.is_self_assessed:
             for field_name in ['mentee', 'disease', 'competence']:
                 self.fields[field_name].disabled = True
+

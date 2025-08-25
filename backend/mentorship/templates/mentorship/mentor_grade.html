@@ -2,8 +2,15 @@
 
 {% block content %}
 <div class="container mt-4">
-  <h2>Mentor Grading: {{ assignment.competence.name }}{% if assignment.competence.description %} - {{ assignment.competence.description }}{% endif %}</h2>
+  <h2>
+    Mentor Grading: {{ assignment.competence.name }}
+    {% if assignment.competence.description %}
+      - {{ assignment.competence.description }}
+    {% endif %}
+  </h2>
+
   <p><strong>Mentee:</strong> {{ assignment.mentee.get_full_name|default:assignment.mentee.username }}</p>
+  <p><strong>Patient ID (PID):</strong> {{ assignment.pid }}</p>
 
   <form method="post">
     {% csrf_token %}
