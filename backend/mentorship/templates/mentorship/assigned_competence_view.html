@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Assessment Review: {{ assignment.competence.name }}</h2>
+<h2>Assessment Review: {{ assignment.competence.name }}{% if assignment.competence.description %} - {{ assignment.competence.description }}{% endif %}</h2>
 
 <p><strong>Visit Date:</strong> {{ assignment.visit_day.date }}</p>
 <p><strong>Mentor:</strong> {{ assignment.visit_day.visit.mentor.get_full_name|default:assignment.visit_day.visit.mentor.username }}</p>

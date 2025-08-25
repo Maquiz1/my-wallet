@@ -123,7 +123,7 @@ class AssignedCompetenceForm(forms.ModelForm):
         model = AssignedCompetence
         fields = ['visit_day', 'mentee', 'disease', 'competence', 'mentor_remarks']
         widgets = {
-            'visit_day': forms.HiddenInput(),  # Pre-filled
+            'visit_day': forms.HiddenInput(),
             'mentee': forms.Select(attrs={'class': 'form-select'}),
             'disease': forms.Select(attrs={'class': 'form-select'}),
             'competence': forms.Select(attrs={'class': 'form-select'}),
@@ -145,7 +145,10 @@ class AssignedCompetenceForm(forms.ModelForm):
 
         self.fields['mentee'].queryset = User.objects.filter(groups__name='Mentee')
 
-        # Disable fields **only if the instance exists and self-assessed**
+        # Display "NAME - DESCRIPTION" in competence dropdown
+        self.fields['competence'].label_from_instance = lambda obj: f"{obj.name} - {obj.description}" if obj.description else obj.name
+
+        # Disable fields only if instance exists and self-assessed
         if self.instance.pk and self.instance.is_self_assessed:
             for field_name in ['mentee', 'disease', 'competence']:
                 self.fields[field_name].disabled = True

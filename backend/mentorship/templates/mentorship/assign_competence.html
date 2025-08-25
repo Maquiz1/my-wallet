@@ -54,7 +54,9 @@
       {% for assignment in assignments %}
         <tr>
           <td>{{ assignment.mentee.get_full_name|default:assignment.mentee.username }}</td>
-          <td>{{ assignment.competence }}</td>
+          <td>
+            {{ assignment.competence.name }}{% if assignment.competence.description %} - {{ assignment.competence.description }}{% endif %}
+          </td>
           <td>
             {% if assignment.status == 'pending' %}
               <span class="badge bg-secondary">Pending</span>

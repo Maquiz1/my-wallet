@@ -11,7 +11,8 @@
   {% for assignment in assignments %}
   <li>
     <strong>Mentee:</strong> {{ assignment.mentee.get_full_name|default:assignment.mentee.username }}<br>
-    <strong>Competence:</strong> {{ assignment.competence }}<br>
+    <strong>Competence:</strong> 
+    {{ assignment.competence.name }}{% if assignment.competence.description %} - {{ assignment.competence.description }}{% endif %}<br>
     <strong>Status:</strong> 
     {% if assignment.status == 'pending' %}
       <span class="badge bg-secondary">Pending</span>

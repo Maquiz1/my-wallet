@@ -12,4 +12,4 @@ class DiseaseAdmin(admin.ModelAdmin):
 
 @admin.register(Competence)
 class CompetenceAdmin(admin.ModelAdmin):
-    list_display = ['name', 'disease']
+    list_display = ['name','description', 'disease']
