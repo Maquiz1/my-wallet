@@ -149,7 +149,6 @@ else:
     EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
     DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL")
 
-
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

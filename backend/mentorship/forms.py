@@ -3,6 +3,8 @@ from django import forms
 from .models import VisitDay, Visit, AssignedCompetence
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django import forms
+from .models import AssignedCompetence, GRADE_CHOICES
 
 User = get_user_model()
 
@@ -71,10 +73,6 @@ class VisitDayForm(forms.ModelForm):
             instance.save()
         return instance
 
-
-from django import forms
-from .models import AssignedCompetence, GRADE_CHOICES
-
 class MentorGradeForm(forms.ModelForm):
     class Meta:
         model = AssignedCompetence
@@ -88,13 +86,10 @@ class MentorGradeForm(forms.ModelForm):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
-        # Only the mentor assigned to the visit can edit
-        if self.instance.pk:
-            if self.user != self.instance.visit_day.visit.mentor:
-                for field in self.fields:
-                    self.fields[field].widget = forms.HiddenInput()
-
-
+        # Disable editing if already graded
+        if self.instance.pk and self.instance.mentor_grade:
+            for field in self.fields:
+                self.fields[field].widget.attrs['readonly'] = True
 
 
 class MenteeSelfAssessmentForm(forms.ModelForm):

@@ -237,10 +237,8 @@ class MentorGradeView(UpdateView):
 
     def dispatch(self, request, *args, **kwargs):
         obj = self.get_object()
-        # Only the assigned mentor can grade
         if obj.visit_day.visit.mentor != request.user:
             return HttpResponseForbidden("You are not allowed to grade this assignment.")
-        # Must wait for mentee self-assessment
         if not obj.is_self_assessed():
             return HttpResponseForbidden("Cannot grade before mentee self-assessment.")
         return super().dispatch(request, *args, **kwargs)
@@ -250,20 +248,17 @@ class MentorGradeView(UpdateView):
         obj.is_completed = True
         obj.status = 'reviewed'
         obj.updated_by = self.request.user
-        # set created_by if not already set
         if not obj.created_by:
             obj.created_by = self.request.user
         obj.save()
 
-        # Update VisitDay and Visit statuses
+        # Update statuses
         obj.visit_day.update_status()
         obj.visit_day.visit.update_status()
 
-        messages.success(
-            self.request,
-            f"You have successfully graded {obj.mentee.get_full_name()}!"
-        )
+        messages.success(self.request, f"You have successfully graded {obj.mentee.get_full_name()}!")
         return redirect(self.get_success_url())
+
 
     def get_success_url(self):
         return reverse_lazy(
@@ -274,10 +269,7 @@ class MentorGradeView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["assignment"] = self.object
-        context['is_admin'] = (
-            self.request.user.is_superuser or 
-            self.request.user.groups.filter(name='Admin').exists()
-        )
+        context['is_admin'] = self.request.user.is_superuser or self.request.user.groups.filter(name='Admin').exists()
         return context
 
 
