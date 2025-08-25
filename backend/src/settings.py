@@ -21,7 +21,18 @@ if DEBUG:
     ALLOWED_HOSTS = ast.literal_eval(env("ALLOWED_HOSTS", default="[]"))
 else:
     # In production, read from environment variable
-    ALLOWED_HOSTS = env("ALLOWED_HOSTS", default="").split(",")
+    # ALLOWED_HOSTS = env("ALLOWED_HOSTS", default="").split(",")
+    ALLOWED_HOSTS = [
+    host.strip()
+    for host in env("ALLOWED_HOSTS", default="").split(",")
+    if host.strip()
+]
+    
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in env("CSRF_TRUSTED_ORIGINS", default="").split(",")
+    if origin.strip()
+]
 
 
 # ALLOWED_HOSTS = env("ALLOWED_HOSTS", default="").split(",")

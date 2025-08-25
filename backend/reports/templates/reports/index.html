@@ -59,33 +59,34 @@
 {% block extra_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+  // Helper: convert month numbers to names
+  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const progressLabels = {{ progress_labels|safe|default:"[]" }}.map(m => monthNames[m-1] || m);
+
   // Visits per Site
   new Chart(document.getElementById('barChart'), {
     type: 'bar',
     data: {
-      labels: ['Site A', 'Site B', 'Site C', 'Site D'],
+      labels: {{ visits_labels|safe|default:"[]" }},
       datasets: [{
         label: 'Visits',
-        data: [12, 19, 3, 5],
+        data: {{ visits_data|safe|default:"[]" }},
         backgroundColor: 'rgba(54, 162, 235, 0.6)',
         borderColor: 'rgba(54, 162, 235, 1)',
         borderWidth: 1
       }]
     },
-    options: {
-      responsive: true,
-      scales: { y: { beginAtZero: true } }
-    }
+    options: { responsive: true, scales: { y: { beginAtZero: true } } }
   });
 
   // Mentorship Progress Over Time
   new Chart(document.getElementById('lineChart'), {
     type: 'line',
     data: {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+      labels: progressLabels,
       datasets: [{
         label: 'Mentorship Progress',
-        data: [3, 7, 4, 6, 8, 10],
+        data: {{ progress_data|safe|default:"[]" }},
         borderColor: 'rgba(255, 99, 132, 1)',
         fill: false,
         tension: 0.1
@@ -98,9 +99,9 @@
   new Chart(document.getElementById('pieChart'), {
     type: 'pie',
     data: {
-      labels: ['Completed', 'Pending', 'In Progress'],
+      labels: {{ status_labels|safe|default:"[]" }},
       datasets: [{
-        data: [10, 5, 3],
+        data: {{ status_data|safe|default:"[]" }},
         backgroundColor: [
           'rgba(75, 192, 192, 0.7)',
           'rgba(255, 206, 86, 0.7)',
@@ -115,51 +116,42 @@
   new Chart(document.getElementById('compVisitChart'), {
     type: 'bar',
     data: {
-      labels: ['Visit 1', 'Visit 2', 'Visit 3'],
+      labels: {{ comp_visit_labels|safe|default:"[]" }},
       datasets: [{
         label: 'Competences',
-        data: [5, 8, 6],
+        data: {{ comp_visit_data|safe|default:"[]" }},
         backgroundColor: 'rgba(153, 102, 255, 0.6)'
       }]
     },
-    options: {
-      responsive: true,
-      scales: { y: { beginAtZero: true } }
-    }
+    options: { responsive: true, scales: { y: { beginAtZero: true } } }
   });
 
   // Competence per Disease
   new Chart(document.getElementById('compDiseaseChart'), {
     type: 'bar',
     data: {
-      labels: ['HIV', 'Diabetes', 'TB'],
+      labels: {{ comp_disease_labels|safe|default:"[]" }},
       datasets: [{
         label: 'Competences',
-        data: [7, 3, 5],
+        data: {{ comp_disease_data|safe|default:"[]" }},
         backgroundColor: 'rgba(255, 159, 64, 0.6)'
       }]
     },
-    options: {
-      responsive: true,
-      scales: { y: { beginAtZero: true } }
-    }
+    options: { responsive: true, scales: { y: { beginAtZero: true } } }
   });
 
   // Competence per Mentee
   new Chart(document.getElementById('compMenteeChart'), {
     type: 'bar',
     data: {
-      labels: ['Alice', 'Bob', 'Charlie'],
+      labels: {{ comp_mentee_labels|safe|default:"[]" }},
       datasets: [{
         label: 'Competences',
-        data: [4, 6, 2],
+        data: {{ comp_mentee_data|safe|default:"[]" }},
         backgroundColor: 'rgba(255, 206, 86, 0.6)'
       }]
     },
-    options: {
-      responsive: true,
-      scales: { y: { beginAtZero: true } }
-    }
+    options: { responsive: true, scales: { y: { beginAtZero: true } } }
   });
 </script>
 {% endblock %}
