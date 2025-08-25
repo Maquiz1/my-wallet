@@ -122,6 +122,22 @@ class VisitDay(models.Model):
     date = models.DateField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
 
+    # strengths = models.TextField("Main skills/areas of competency", blank=True, null=True)
+    # improvements = models.TextField("Skills needing mentoring/training", blank=True, null=True)
+
+    strengths = models.ManyToManyField(
+        'AssignedCompetence',
+        blank=True,
+        related_name='strengths_of_day'
+    )
+    improvements = models.ManyToManyField(
+        'AssignedCompetence',
+        blank=True,
+        related_name='improvements_of_day'
+    )
+    
+    comments = models.TextField("Additional comments", blank=True, null=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
@@ -162,6 +178,23 @@ class VisitDay(models.Model):
 
 
 class AssignedCompetence(models.Model):
+    
+    MENTEE_GRADE_CHOICES = [
+        (1, '1 - I need help'),
+        (2, '2 - I have some understanding'),
+        (3, '3 - I can do it with guidance'),
+        (4, '4 - I am confident'),
+        (5, '5 - I can teach others'),
+    ]
+
+    MENTOR_GRADE_CHOICES = [
+        (1, "Needs Improvement"),
+        (2, "Fair"),
+        (3, "Good"),
+        (4, "Very Good"),
+        (5, "Excellent"),
+    ]
+    
     STATUS_CHOICES = [
         ("pending", "Pending"),
         ("assigned", "Assigned"),
@@ -183,9 +216,10 @@ class AssignedCompetence(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     is_completed = models.BooleanField(default=False)
 
-    mentee_grade = models.CharField(max_length=20, blank=True, null=True)
+    mentee_grade = models.IntegerField(choices=MENTEE_GRADE_CHOICES, blank=True, null=True)
     mentee_remarks = models.TextField(blank=True, null=True)
-    mentor_grade = models.CharField(max_length=20, blank=True, null=True)
+    mentor_grade = models.IntegerField(choices=MENTOR_GRADE_CHOICES, blank=True, null=True)
+    mentor_description = models.TextField(blank=True, null=True)  # Added by mentor during assignment
     mentor_remarks = models.TextField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -204,12 +238,18 @@ class AssignedCompetence(models.Model):
         if self.visit_day.visit.mentor == self.mentee:
             raise ValidationError("Mentor cannot assign competencies to themselves.")
 
-        valid_grades = ["Excellent", "Good", "Fair", "Poor"]
-        if self.mentor_grade and self.mentor_grade not in valid_grades:
-            raise ValidationError(f"Mentor grade must be one of: {', '.join(valid_grades)}.")
+        # Mentor grade validation
+        if self.mentor_grade and self.mentor_grade not in dict(self.MENTOR_GRADE_CHOICES).keys():
+            raise ValidationError(
+                f"Mentor grade must be one of: {', '.join([label for _, label in self.MENTOR_GRADE_CHOICES])}."
+            )
 
-        if self.mentee_grade and self.mentee_grade not in valid_grades:
-            raise ValidationError(f"Mentee grade must be one of: {', '.join(valid_grades)}.")
+        # Mentee grade validation
+        if self.mentee_grade and self.mentee_grade not in dict(self.MENTEE_GRADE_CHOICES).keys():
+            raise ValidationError(
+                f"Mentee grade must be one of: {', '.join([label for _, label in self.MENTEE_GRADE_CHOICES])}."
+            )
+
 
     def __str__(self):
         return f"{self.mentee} - {self.competence} ({self.status}) [PID: {self.pid}]"

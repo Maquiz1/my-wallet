@@ -1,31 +1,44 @@
 {% extends 'base.html' %}
-
 {% block content %}
 <h2>
-  Your Self-Assessment: 
-  {{ assignment.competence.name }}
-  {% if assignment.competence.description %}
-    – {{ assignment.competence.description }}
-  {% endif %}
+  Self-Assessment: {{ assignment.competence.name }}
+  {% if assignment.competence.description %} – {{ assignment.competence.description }}{% endif %}
 </h2>
 
-<p><strong>Patient ID (PID):</strong> {{ assignment.pid }}</p>
+{% if assignment.mentor_description %}
+  <p><strong>Mentor Guidance:</strong></p>
+  <p class="border p-2 bg-light">{{ assignment.mentor_description }}</p>
+{% endif %}
 
 <form method="post">
   {% csrf_token %}
-  {{ form.as_p }}
+  
+  <div class="mb-3">
+    <label class="form-label"><strong>Patient ID (PID)</strong></label>
+    {{ form.pid }}
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label"><strong>Your Grade</strong></label>
+    {{ form.mentee_grade }}
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label"><strong>Your Remarks</strong></label>
+    {{ form.mentee_remarks }}
+  </div>
 
   <p><strong>Grading Guide:</strong></p>
   <ul>
-    <li><strong>1</strong> - I need help</li>
-    <li><strong>2</strong> - I have some understanding</li>
-    <li><strong>3</strong> - I can do it with guidance</li>
-    <li><strong>4</strong> - I am confident</li>
-    <li><strong>5</strong> - I can teach others</li>
+    <li>1 - I need help</li>
+    <li>2 - I have some understanding</li>
+    <li>3 - I can do it with guidance</li>
+    <li>4 - I am confident</li>
+    <li>5 - I can teach others</li>
   </ul>
 
-  <button type="submit" class="btn btn-success">Submit Self-Assessment</button>
+  <button type="submit" class="btn btn-primary">Submit Self-Assessment</button>
 </form>
 
-<a href="{% url 'mentorship:visit-day-detail' assignment.visit_day.id %}" class="btn btn-secondary mt-2">🔙 Back to Visit Day</a>
+<a href="{% url 'mentorship:visit-day-detail' assignment.visit_day.id %}">🔙 Back to Visit Day</a>
 {% endblock %}

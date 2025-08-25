@@ -1,60 +1,117 @@
 {% extends 'base.html' %}
+
 {% block content %}
 
 <h2>Visit Day: {{ visit_day.date }}</h2>
-
 <h4>Mentor: {{ visit_day.visit.mentor.get_full_name|default:visit_day.visit.mentor.username }}</h4>
 
 <h3>Competence Assignments</h3>
 
-<ul>
-  {% for assignment in assignments %}
-  <li>
-    <strong>Mentee:</strong> {{ assignment.mentee.get_full_name|default:assignment.mentee.username }}<br>
-    <strong>Competence:</strong> 
-    {{ assignment.competence.name }}{% if assignment.competence.description %} - {{ assignment.competence.description }}{% endif %}<br>
-    <strong>Status:</strong> 
-    {% if assignment.status == 'pending' %}
-      <span class="badge bg-secondary">Pending</span>
-    {% elif assignment.status == 'assigned' %}
-      <span class="badge bg-info">Assigned</span>
-    {% elif assignment.status == 'completed' %}
-      <span class="badge bg-success">Self-Assessed</span>
-    {% elif assignment.status == 'reviewed' %}
-      <span class="badge bg-primary">Reviewed</span>
-    {% endif %}<br>
+{% for mentee, assignments in mentee_assignments.items %}
+  <h5>Mentee: {{ mentee.get_full_name|default:mentee.username }}</h5>
 
-    {% if request.user.id == visit_day.visit.mentor.id %}
-      {# Edit allowed only until self-assessment starts #}
-      {% if assignment.status == 'pending' or assignment.status == 'assigned' %}
-        <a href="{% url 'mentorship:assigned-competence-edit' assignment.id %}">Edit</a> |
-      {% else %}
-        <span style="color:gray;">Edit (disabled)</span> |
-      {% endif %}
+  <ul>
+    {% for assignment in assignments %}
+      <li>
+        <strong>Patient ID (PID):</strong> {{ assignment.pid|default:"Not provided" }}<br>
+        <strong>Competence:</strong> {{ assignment.competence.name }}{% if assignment.competence.description %} - {{ assignment.competence.description }}{% endif %}<br>
 
-      {# Mentor grade always visible, but form read-only after first grading #}
-      {% if assignment.status == 'completed' %}
-        <a href="{% url 'mentorship:mentor-grade' assignment.id %}">Mentor Grade</a> |
-      {% elif assignment.status == 'reviewed' %}
-        <a href="{% url 'mentorship:mentor-grade' assignment.id %}">View Mentor Grade</a> |
-      {% else %}
-        <span style="color:gray;">Mentor Grade (awaiting self-assessment)</span> |
-      {% endif %}
-    {% elif request.user == assignment.mentee %}
-      {% if assignment.status != 'reviewed' %}
-        <a href="{% url 'mentorship:mentee-self-assess' assignment.id %}">Self Assess</a> |
-      {% else %}
-        <span style="color:gray;">Self Assess (disabled)</span> |
-      {% endif %}
-    {% endif %}
+        {% if assignment.mentor_description %}
+          <strong>Mentor Guidance:</strong> {{ assignment.mentor_description }}<br>
+        {% endif %}
 
-    <a href="{% url 'mentorship:assigned-competence-view' assignment.id %}">View Assessment</a>
-  </li>
+        <strong>Status:</strong>
+        {% if assignment.status == 'pending' %}
+          <span class="badge bg-secondary">Pending</span>
+        {% elif assignment.status == 'assigned' %}
+          <span class="badge bg-info">Assigned</span>
+        {% elif assignment.status == 'completed' %}
+          <span class="badge bg-success">Self-Assessed</span>
+        {% elif assignment.status == 'reviewed' %}
+          <span class="badge bg-primary">Reviewed</span>
+        {% endif %}<br>
+
+        <strong>Mentee Grade:</strong>
+        {% if assignment.mentee_grade %}
+          {{ assignment.get_mentee_grade_display }}
+        {% else %}
+          Not yet assessed
+        {% endif %}<br>
+
+        <strong>Mentor Grade:</strong>
+        {% if assignment.mentor_grade %}
+          {{ assignment.get_mentor_grade_display }}
+        {% else %}
+          {% if is_mentor %}
+            <a href="{% url 'mentorship:mentor-grade' assignment.id %}">Enter Grade</a>
+          {% else %}
+            Awaiting mentor grading
+          {% endif %}
+        {% endif %}<br>
+
+        <strong>Mentee Remarks:</strong> {{ assignment.mentee_remarks|default:"No remarks" }}<br>
+        <strong>Mentor Remarks:</strong> {{ assignment.mentor_remarks|default:"No remarks" }}<br>
+
+        {% if is_mentor %}
+          {% if assignment.status in 'pending,assigned' %}
+            <a href="{% url 'mentorship:assigned-competence-edit' assignment.id %}">Edit</a>
+          {% else %}
+            <span style="color:gray;">Edit (disabled)</span>
+          {% endif %}
+        {% elif request.user == assignment.mentee %}
+          {% if assignment.status != 'reviewed' %}
+            <a href="{% url 'mentorship:mentee-self-assess' assignment.id %}">Self Assess</a>
+          {% else %}
+            <span style="color:gray;">Self Assess (disabled)</span>
+          {% endif %}
+        {% endif %}
+
+        | <a href="{% url 'mentorship:assigned-competence-view' assignment.id %}">View Assessment</a>
+      </li>
+    {% endfor %}
+  </ul>
+
+  {# Mentor Summary Section #}
+  {% if summary_ready.mentee.id %}
+    <div class="mt-3 p-3 border rounded bg-light">
+      <h5>Mentor Summary for {{ mentee.get_full_name|default:mentee.username }}</h5>
+      <form method="post" action="{% url 'mentorship:mentor-summary' visit_day.id mentee.id %}">
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label class="form-label">List 3 main skills/areas of competency of the Mentee:</label>
+          <select name="strengths" class="form-select" multiple>
+            {% for assignment in assignments %}
+              {% if assignment.mentee_grade %}
+                <option value="{{ assignment.competence.id }}">{{ assignment.competence.name }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">List 3 skills/areas that require additional mentoring or training:</label>
+          <select name="improvements" class="form-select" multiple>
+            {% for assignment in assignments %}
+              {% if assignment.mentee_grade %}
+                <option value="{{ assignment.competence.id }}">{{ assignment.competence.name }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Additional comments:</label>
+          <textarea name="additional_comments" class="form-control" rows="3"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Submit Summary</button>
+      </form>
+    </div>
+  {% endif %}
+
   <hr>
-  {% empty %}
-  <li>No competence assigned yet.</li>
-  {% endfor %}
-</ul>
+{% endfor %}
 
 {% if is_mentor %}
   <a href="{% url 'mentorship:assign-competence' visit_day.id %}" class="btn btn-primary">➕ Assign Competence</a><br>

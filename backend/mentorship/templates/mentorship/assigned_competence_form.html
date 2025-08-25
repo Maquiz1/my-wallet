@@ -4,12 +4,17 @@
 
 <p><strong>Visit Day:</strong> {{ form.instance.visit_day.date }}</p>
 <p><strong>Mentee:</strong> {{ form.instance.mentee.get_full_name|default:form.instance.mentee.username }}</p>
-<p><strong>Patient ID (PID):</strong> {{ form.instance.pid }}</p>
-<p><strong>Competence:</strong> {{ form.instance.competence.name }}{% if form.instance.competence.description %} - {{ form.instance.competence.description }}{% endif %}</p>
+<p><strong>Patient ID (PID):</strong> {{ form.instance.pid|default:"Not provided" }}</p>
+<p><strong>Competence:</strong> {{ form.instance.competence.name }}
+  {% if form.instance.competence.description %} - {{ form.instance.competence.description }}{% endif %}
+</p>
 
 <form method="post">
   {% csrf_token %}
   {{ form.as_p }}
+
+  <p><strong>Mentor Remarks:</strong> <span class="text-muted">Will be added during grading</span></p>
+
   <button type="submit">Save changes</button>
 </form>
 

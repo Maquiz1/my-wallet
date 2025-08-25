@@ -6,6 +6,7 @@
 <p><strong>Visit Date:</strong> {{ assignment.visit_day.date }}</p>
 <p><strong>Mentor:</strong> {{ assignment.visit_day.visit.mentor.get_full_name|default:assignment.visit_day.visit.mentor.username }}</p>
 <p><strong>Mentee:</strong> {{ assignment.mentee.get_full_name|default:assignment.mentee.username }}</p>
+<p><strong>Patient ID (PID):</strong> {{ assignment.pid }}</p>  {# Added PID display #}
 
 <hr>
 

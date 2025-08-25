@@ -2,15 +2,13 @@
 
 {% block content %}
 <div class="container mt-4">
-  <h2>
-    Mentor Grading: {{ assignment.competence.name }}
-    {% if assignment.competence.description %}
-      - {{ assignment.competence.description }}
-    {% endif %}
+  <h2>Mentor Grading: {{ assignment.competence.name }}
+    {% if assignment.competence.description %} - {{ assignment.competence.description }}{% endif %}
   </h2>
 
   <p><strong>Mentee:</strong> {{ assignment.mentee.get_full_name|default:assignment.mentee.username }}</p>
-  <p><strong>Patient ID (PID):</strong> {{ assignment.pid }}</p>
+  <p><strong>Patient ID:</strong> {{ assignment.pid|default:"Not provided" }}</p>
+  <p><strong>Mentor Description:</strong> {{ assignment.mentor_description|default:"No description" }}</p>
 
   <form method="post">
     {% csrf_token %}
@@ -25,10 +23,17 @@
       <tbody>
         <tr>
           <td>Grade</td>
-          <td>{{ assignment.mentee_grade|default:"Not yet assessed" }}</td>
+          <td>
+            {% if assignment.mentee_grade %}
+              {{ assignment.get_mentee_grade_display }}
+            {% else %}
+              Not yet assessed
+            {% endif %}
+          </td>
           <td>
             {% if assignment.mentor_grade %}
-              <input type="text" class="form-control bg-light" value="{{ assignment.mentor_grade }}" readonly>
+              <input type="text" class="form-control bg-light"
+                     value="{{ assignment.get_mentor_grade_display }}" readonly>
             {% else %}
               {{ form.mentor_grade }}
             {% endif %}
@@ -39,7 +44,9 @@
           <td>{{ assignment.mentee_remarks|default:"No remarks" }}</td>
           <td>
             {% if assignment.mentor_remarks %}
-              <textarea class="form-control bg-light" rows="3" readonly>{{ assignment.mentor_remarks }}</textarea>
+              <textarea class="form-control bg-light" rows="3" readonly>
+                {{ assignment.mentor_remarks }}
+              </textarea>
             {% else %}
               {{ form.mentor_remarks }}
             {% endif %}
@@ -53,6 +60,8 @@
     {% endif %}
   </form>
 
-  <a href="{% url 'mentorship:visit-day-detail' assignment.visit_day.id %}" class="btn btn-outline-secondary mt-3">🔙 Back to Visit Day</a>
+  <a href="{% url 'mentorship:visit-day-detail' assignment.visit_day.id %}" class="btn btn-outline-secondary mt-3">
+    🔙 Back to Visit Day
+  </a>
 </div>
 {% endblock %}

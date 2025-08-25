@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.http import HttpResponseForbidden
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .models import Visit, VisitDay, AssignedCompetence
-from .forms import VisitForm, VisitDayForm, AssignedCompetenceForm, MentorGradeForm, MenteeSelfAssessmentForm
+from .forms import VisitForm, VisitDayForm, AssignedCompetenceForm, MentorGradeForm, MenteeSelfAssessmentForm,VisitDaySummaryForm
 from django.core.exceptions import PermissionDenied
 
 from django.contrib.auth import get_user_model
@@ -103,8 +103,7 @@ class VisitDeleteView(LoginRequiredMixin, AdminCheckMixin, DeleteView):
     def get_success_url(self):
         return reverse_lazy('mentorship:visit-list')
 
-
-class VisitDayDetailView(LoginRequiredMixin, AdminCheckMixin, DetailView):
+class VisitDayDetailView(LoginRequiredMixin, DetailView):
     model = VisitDay
     template_name = 'mentorship/visit_day_detail.html'
     context_object_name = 'visit_day'
@@ -112,8 +111,31 @@ class VisitDayDetailView(LoginRequiredMixin, AdminCheckMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['assignments'] = self.object.assignments.all()
-        context['is_mentor'] = self.request.user.id == self.object.visit.mentor.id
+        visit_day = self.object
+
+        # All assignments for this visit day
+        assignments = visit_day.assignments.select_related('mentee', 'competence').all()
+
+        # Group assignments by mentee
+        mentee_assignments = {}
+        summary_ready = {}  # mentee.id -> True if at least one self-assessed competence
+
+        for assignment in assignments:
+            mentee = assignment.mentee
+            if mentee not in mentee_assignments:
+                mentee_assignments[mentee] = []
+                summary_ready[mentee.id] = False  # default
+
+            mentee_assignments[mentee].append(assignment)
+
+            # Mark summary_ready True if at least one competence is self-assessed
+            if assignment.mentee_grade:
+                summary_ready[mentee.id] = True
+
+        context['assignments'] = assignments
+        context['mentee_assignments'] = mentee_assignments
+        context['summary_ready'] = summary_ready
+        context['is_mentor'] = self.request.user == visit_day.visit.mentor
         return context
 
 
@@ -323,3 +345,21 @@ class AssignedCompetenceDeleteView(LoginRequiredMixin, UserPassesTestMixin, Dele
 
     def get_success_url(self):
         return reverse_lazy('mentorship:assign-competence', kwargs={'visit_day_id': self.object.visit_day.id})
+    
+    
+class VisitDaySummaryUpdateView(UpdateView):
+    model = VisitDay
+    form_class = VisitDaySummaryForm
+    template_name = "mentorship/visit_day_summary.html"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        visit_day = self.get_object()
+
+        # For simplicity, take the first mentee assigned to this visit day
+        mentee = visit_day.assignments.first().mentee if visit_day.assignments.exists() else None
+        kwargs.update({'visit_day': visit_day, 'mentee': mentee})
+        return kwargs
+
+    def get_success_url(self):
+        return reverse_lazy('mentorship:visit-day-detail', kwargs={'pk': self.object.pk})
