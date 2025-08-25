@@ -72,6 +72,9 @@ class VisitDayForm(forms.ModelForm):
         return instance
 
 
+from django import forms
+from .models import AssignedCompetence, GRADE_CHOICES
+
 class MentorGradeForm(forms.ModelForm):
     class Meta:
         model = AssignedCompetence
@@ -85,12 +88,12 @@ class MentorGradeForm(forms.ModelForm):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
-        # Only the mentor assigned to the visit can see these fields
-        if self.user and self.instance.visit_day.visit.mentor != self.user:
-            for field in self.fields:
-                self.fields[field].widget = forms.HiddenInput()
+        # Only the mentor assigned to the visit can edit
+        if self.instance.pk:
+            if self.user != self.instance.visit_day.visit.mentor:
+                for field in self.fields:
+                    self.fields[field].widget = forms.HiddenInput()
 
-        # ✅ Do NOT disable fields here
 
 
 

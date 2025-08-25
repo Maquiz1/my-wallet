@@ -224,7 +224,7 @@ class AssignedCompetenceUpdateView(LoginRequiredMixin, AdminCheckMixin, UpdateVi
     def get_success_url(self):
         return reverse('mentorship:visit-day-detail', kwargs={'visit_day_id': self.object.visit_day.id})
     
-class MentorGradeView(LoginRequiredMixin, UpdateView):
+class MentorGradeView(UpdateView):
     model = AssignedCompetence
     form_class = MentorGradeForm
     template_name = "mentorship/mentor_grade.html"
@@ -232,31 +232,30 @@ class MentorGradeView(LoginRequiredMixin, UpdateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['user'] = self.request.user  # pass current user to form
+        kwargs['user'] = self.request.user
         return kwargs
 
     def dispatch(self, request, *args, **kwargs):
         obj = self.get_object()
+        # Only the assigned mentor can grade
         if obj.visit_day.visit.mentor != request.user:
             return HttpResponseForbidden("You are not allowed to grade this assignment.")
-        if not obj.is_self_assessed:
+        # Must wait for mentee self-assessment
+        if not obj.is_self_assessed():
             return HttpResponseForbidden("Cannot grade before mentee self-assessment.")
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         obj = form.save(commit=False)
-
-        # explicitly update mentor fields
-        obj.mentor_grade = form.cleaned_data.get("mentor_grade")
-        obj.mentor_remarks = form.cleaned_data.get("mentor_remarks")
-
-        # mark as completed
         obj.is_completed = True
         obj.status = 'reviewed'
         obj.updated_by = self.request.user
+        # set created_by if not already set
+        if not obj.created_by:
+            obj.created_by = self.request.user
         obj.save()
 
-        # update parent visit statuses
+        # Update VisitDay and Visit statuses
         obj.visit_day.update_status()
         obj.visit_day.visit.update_status()
 

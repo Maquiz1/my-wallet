@@ -9,6 +9,13 @@ import logging
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
+GRADE_CHOICES = [
+    ('', '---'),
+    ('Excellent', 'Excellent'),
+    ('Good', 'Good'),
+    ('Fair', 'Fair'),
+    ('Poor', 'Poor'),
+]
 
 class Mentorship(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
