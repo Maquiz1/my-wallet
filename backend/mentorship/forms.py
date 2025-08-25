@@ -206,3 +206,4 @@ class VisitDaySummaryForm(forms.ModelForm):
         if len(data) > 3:
             raise forms.ValidationError("You can select up to 3 areas for improvement only.")
         return data
+

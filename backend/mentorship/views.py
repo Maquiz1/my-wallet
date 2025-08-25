@@ -112,32 +112,66 @@ class VisitDayDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         visit_day = self.object
-
-        # All assignments for this visit day
-        assignments = visit_day.assignments.select_related('mentee', 'competence').all()
+        assignments = AssignedCompetence.objects.filter(
+            visit_day=visit_day
+        ).select_related('mentee', 'competence', 'disease')
 
         # Group assignments by mentee
         mentee_assignments = {}
-        summary_ready = {}  # mentee.id -> True if at least one self-assessed competence
+        mentee_summary_forms = []
 
         for assignment in assignments:
             mentee = assignment.mentee
             if mentee not in mentee_assignments:
                 mentee_assignments[mentee] = []
-                summary_ready[mentee.id] = False  # default
-
+                # Prepare summary form for this mentee
+                form = VisitDaySummaryForm(
+                    instance=visit_day,
+                    visit_day=visit_day,
+                    mentee=mentee,
+                    prefix=str(mentee.id)
+                )
+                mentee_summary_forms.append((mentee, form))
             mentee_assignments[mentee].append(assignment)
 
-            # Mark summary_ready True if at least one competence is self-assessed
-            if assignment.mentee_grade:
-                summary_ready[mentee.id] = True
+        # Annotate self-assessment
+        for mentee, assigns in mentee_assignments.items():
+            mentee.has_self_assessed = any(a.is_self_assessed() for a in assigns)
 
-        context['assignments'] = assignments
         context['mentee_assignments'] = mentee_assignments
-        context['summary_ready'] = summary_ready
+        context['mentee_summary_forms'] = mentee_summary_forms
         context['is_mentor'] = self.request.user == visit_day.visit.mentor
         return context
 
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        visit_day = self.object
+        assignments = AssignedCompetence.objects.filter(
+            visit_day=visit_day
+        ).select_related('mentee', 'competence')
+
+        # Prepare forms
+        mentee_forms = []
+        processed_mentees = set()
+        for assignment in assignments:
+            mentee = assignment.mentee
+            if mentee.id not in processed_mentees:
+                form = VisitDaySummaryForm(
+                    request.POST,
+                    instance=visit_day,
+                    visit_day=visit_day,
+                    mentee=mentee,
+                    prefix=str(mentee.id)
+                )
+                mentee_forms.append((mentee, form))
+                processed_mentees.add(mentee.id)
+
+        # Save valid forms
+        for mentee, form in mentee_forms:
+            if form.is_valid():
+                form.save()
+
+        return redirect('mentorship:visit-day-detail', visit_day_id=visit_day.id)
 
 class VisitDayUpdateView(LoginRequiredMixin, AdminCheckMixin, UpdateView):
     model = VisitDay
