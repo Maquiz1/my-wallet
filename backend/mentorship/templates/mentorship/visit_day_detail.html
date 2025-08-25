@@ -1,4 +1,6 @@
 {% extends 'base.html' %}
+{% load static %}
+
 
 {% block content %}
 <h2>Visit Day: {{ visit_day.date }}</h2>
@@ -76,47 +78,8 @@
 
 <a href="{% url 'mentorship:visit-detail' visit_day.visit.id %}" class="btn btn-secondary mt-2">🔙 Back to Visit</a>
 
+{% endblock %}
 
-
-
-
-
-
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const forms = document.querySelectorAll('.mentor-summary-form');
-
-    forms.forEach(form => {
-      form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        const menteeId = form.dataset.menteeId;
-        const url = window.location.href;  // Post to current page
-        const formData = new FormData(form);
-
-        fetch(url, {
-          method: 'POST',
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-          },
-          body: formData
-        })
-          .then(response => response.json())
-          .then(data => {
-            const feedback = form.querySelector('.summary-feedback');
-            if (data.success) {
-              feedback.style.display = 'inline';
-              setTimeout(() => feedback.style.display = 'none', 2000);
-            } else if (data.errors) {
-              alert('Error saving summary: ' + JSON.stringify(data.errors));
-            }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            alert('An unexpected error occurred.');
-          });
-      });
-    });
-  });
-</script>
-
+{% block extra_scripts %}
+<script src="{% static 'mentorship/js/mentor_summary.js' %}"></script>
 {% endblock %}
