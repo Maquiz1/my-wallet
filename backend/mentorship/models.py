@@ -17,6 +17,13 @@ GRADE_CHOICES = [
     ('Poor', 'Poor'),
 ]
 
+class Status(models.Model):
+    name = models.CharField(max_length=50, unique=True)  # e.g., Assigned, Completed, Reviewed
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
 class Mentorship(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

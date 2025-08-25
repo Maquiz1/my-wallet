@@ -6,7 +6,9 @@
 
 {% block content %}
 <h2>User Manuals</h2>
+{% if user.is_superuser %}
 <a href="{% url 'documents:usermanual-create' %}" class="btn btn-success mb-3">Upload New User Manual</a>
+{% endif %}
 
 <table class="table table-bordered">
   <thead>
