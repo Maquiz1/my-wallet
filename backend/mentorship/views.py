@@ -245,13 +245,21 @@ class MentorGradeView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         obj = form.save(commit=False)
+
+        # explicitly update mentor fields
+        obj.mentor_grade = form.cleaned_data.get("mentor_grade")
+        obj.mentor_remarks = form.cleaned_data.get("mentor_remarks")
+
+        # mark as completed
         obj.is_completed = True
-        obj.status = 'reviewed'  # optional: update status
+        obj.status = 'reviewed'
         obj.updated_by = self.request.user
-        obj.save()  # save mentor_grade
-        # Update related statuses
+        obj.save()
+
+        # update parent visit statuses
         obj.visit_day.update_status()
         obj.visit_day.visit.update_status()
+
         messages.success(
             self.request,
             f"You have successfully graded {obj.mentee.get_full_name()}!"
@@ -259,12 +267,18 @@ class MentorGradeView(LoginRequiredMixin, UpdateView):
         return redirect(self.get_success_url())
 
     def get_success_url(self):
-        return reverse_lazy("mentorship:visit-day-detail", kwargs={'visit_day_id': self.object.visit_day.id})
+        return reverse_lazy(
+            "mentorship:visit-day-detail",
+            kwargs={'visit_day_id': self.object.visit_day.id}
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["assignment"] = self.object
-        context['is_admin'] = self.request.user.is_superuser or self.request.user.groups.filter(name='Admin').exists()
+        context['is_admin'] = (
+            self.request.user.is_superuser or 
+            self.request.user.groups.filter(name='Admin').exists()
+        )
         return context
 
 
