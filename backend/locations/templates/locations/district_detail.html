@@ -11,6 +11,7 @@
       <th>#</th>
       <th>Site Name</th>
       <th>Mentorships Count</th>
+      <th>Completed Mentorships</th>
       <th>Actions</th>
     </tr>
   </thead>
@@ -20,6 +21,7 @@
       <td>{{ forloop.counter }}</td>
       <td>{{ site.name }}</td>
       <td>{{ site.mentorship_count }}</td>
+      <td>{{ site.completed_count }}</td>
       <td>
         <a href="{% url 'locations:site-detail' site.id %}" class="btn btn-sm btn-primary">
           View Details

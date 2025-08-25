@@ -17,7 +17,7 @@
     <tr>
       <th scope="row">{{ forloop.counter }}</th>
       <td>{{ disease.name }}</td>
-      <td>{{ disease.competence_set.count }}</td>
+      <td>{{ disease.competence_count }}</td>
       <td>
         <a href="{% url 'clinical:disease-detail' disease.id %}" class="btn btn-sm btn-primary">
           View Details

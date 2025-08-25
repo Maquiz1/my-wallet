@@ -16,13 +16,13 @@ env.read_env(BASE_DIR / ".env")
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env.bool("DEBUG", default=False)
 
-# if DEBUG:
-#     # For development, allow localhost and 127.0.0.1
-#     ALLOWED_HOSTS = ast.literal_eval(env("ALLOWED_HOSTS", default="[]"))
-# else:
+if DEBUG:
+    # For development, allow localhost and 127.0.0.1
+    ALLOWED_HOSTS = ast.literal_eval(env("ALLOWED_HOSTS", default="[]"))
+else:
     # In production, read from environment variable
     # ALLOWED_HOSTS = env("ALLOWED_HOSTS", default="").split(",")
-ALLOWED_HOSTS = [
+    ALLOWED_HOSTS = [
     host.strip()
     for host in env("ALLOWED_HOSTS", default="").split(",")
     if host.strip()
