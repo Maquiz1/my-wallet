@@ -69,9 +69,13 @@ class DashboardHomeView(LoginRequiredMixin, TemplateView):
         counts_dict = {s['day'].strftime("%a"): s['count'] for s in submissions}
         context['activity_chart_data'] = [counts_dict.get((last_7_days + timedelta(days=i)).strftime("%a"), 0) for i in range(7)]
 
-        # Recent assignments
-        context['recent_activity'] = AssignedCompetence.objects.select_related('mentee', 'competence', 'visit_day') \
+        # Recent visits
+        context['recent_visits'] = Visit.objects.select_related('site', 'mentor', 'created_by', 'updated_by') \
             .order_by('-created_at')[:5]
 
+        # Recent activity
+        context['recent_activity'] = AssignedCompetence.objects.select_related('mentee', 'competence', 'visit_day') \
+            .order_by('-created_at')[:5]
+            
         context['user'] = user
         return context
