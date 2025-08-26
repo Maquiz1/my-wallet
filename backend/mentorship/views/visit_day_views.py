@@ -14,7 +14,6 @@ from .mixins import AdminCheckMixin, RoleRequiredMixin
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
-
 class VisitDayDetailView(LoginRequiredMixin, DetailView):
     model = VisitDay
     template_name = 'mentorship/visit_day_detail.html'
@@ -28,34 +27,31 @@ class VisitDayDetailView(LoginRequiredMixin, DetailView):
         visit = visit_day.visit
         user = self.request.user
 
-        # Reviewer / superuser can view any visit day
+        # Reviewer / superuser
         if user.groups.filter(name='Reviewer').exists() or user.is_superuser:
             return visit_day
-
-        # Admin can view only visit days for visits they created
+        # Admin (only visits they created)
         elif user.groups.filter(name='Admin').exists():
             if visit.created_by != user:
                 raise PermissionDenied("You cannot view this visit day.")
             return visit_day
-
-        # Mentor can view only their visit days
+        # Mentor (only their visits)
         elif user.groups.filter(name='Mentor').exists():
             if visit.mentor != user:
                 raise PermissionDenied("You cannot view this visit day.")
             return visit_day
-
-        # Mentee can view only visit days where they have assigned competences
+        # Mentee (only assignments for themselves)
         elif user.groups.filter(name='Mentee').exists():
             if not visit_day.assignments.filter(mentee=user).exists():
                 raise PermissionDenied("You cannot view this visit day.")
             return visit_day
 
-        # Default deny
         raise PermissionDenied("You cannot view this visit day.")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         visit_day = self.object
+        user = self.request.user
 
         assignments = AssignedCompetence.objects.filter(
             visit_day=visit_day
@@ -67,6 +63,10 @@ class VisitDayDetailView(LoginRequiredMixin, DetailView):
 
         for assignment in assignments:
             mentee = assignment.mentee
+            # Only show mentee their own assignments
+            if user.groups.filter(name='Mentee').exists() and mentee != user:
+                continue
+
             if mentee not in mentee_assignments:
                 mentee_assignments[mentee] = []
                 form = VisitDaySummaryForm(
@@ -84,7 +84,7 @@ class VisitDayDetailView(LoginRequiredMixin, DetailView):
 
         context['mentee_assignments'] = mentee_assignments
         context['mentee_summary_forms'] = mentee_summary_forms
-        context['is_mentor'] = self.request.user == visit_day.visit.mentor
+        context['is_mentor'] = user == visit_day.visit.mentor
         return context
 
     def post(self, request, *args, **kwargs):
@@ -99,6 +99,10 @@ class VisitDayDetailView(LoginRequiredMixin, DetailView):
 
         for assignment in assignments:
             mentee = assignment.mentee
+            # Only process form for the mentee making the request or for mentor
+            if request.user.groups.filter(name='Mentee').exists() and mentee != request.user:
+                continue
+
             if mentee.id not in processed_mentees:
                 form = VisitDaySummaryForm(
                     request.POST,
@@ -119,7 +123,8 @@ class VisitDayDetailView(LoginRequiredMixin, DetailView):
             return JsonResponse(response_data)
 
         return redirect('mentorship:visit-day-detail', pk=visit_day.pk)
-
+    
+    
 class VisitDayUpdateView(LoginRequiredMixin, AdminCheckMixin, UpdateView):
     model = VisitDay
     form_class = VisitDayForm

@@ -66,11 +66,13 @@ class MentorGradeView(UpdateView):
         )
         return redirect(self.get_success_url())
 
+    # def get_success_url(self):
+    #     return reverse_lazy(
+    #         "mentorship:visit-day-detail",
+    #         kwargs={'visit_day_id': self.object.visit_day.id}
+    #     )
     def get_success_url(self):
-        return reverse_lazy(
-            "mentorship:visit-day-detail",
-            kwargs={'visit_day_id': self.object.visit_day.id}
-        )
+        return reverse_lazy('mentorship:visit-day-detail', kwargs={'pk': self.object.visit_day.id})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -104,8 +106,7 @@ class MenteeSelfAssessmentView(LoginRequiredMixin, AdminCheckMixin, RoleRequired
         return response
 
     def get_success_url(self):
-        return reverse('mentorship:visit-day-detail', kwargs={'visit_day_id': self.object.visit_day.id})
-
+        return reverse_lazy('mentorship:visit-day-detail', kwargs={'pk': self.object.visit_day.id})
 
 class AllAssessmentsListView(LoginRequiredMixin, AdminCheckMixin, RoleRequiredMixin, ListView):
     model = AssignedCompetence
@@ -126,6 +127,8 @@ class AssignedCompetenceDeleteView(LoginRequiredMixin, UserPassesTestMixin, Dele
         # Only allow Mentor who assigned it or Admin
         return self.request.user == assignment.assigned_by or self.request.user.is_superuser
 
-    def get_success_url(self):
-        return reverse_lazy('mentorship:assign-competence', kwargs={'visit_day_id': self.object.visit_day.id})
+    # def get_success_url(self):
+    #     return reverse_lazy('mentorship:assign-competence', kwargs={'visit_day_id': self.object.visit_day.id})
     
+    def get_success_url(self):
+        return reverse_lazy('mentorship:assign-competence', kwargs={'pk': self.object.visit_day.id})

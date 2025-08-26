@@ -1,44 +1,116 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Logbook - Mentorship Visit Day Details{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">Edit Visit Day: {{ visit_day.date|date:"M d, Y" }}</h2>
+<div class="container mt-4">
+  <!-- Page Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold">Visit Day: {{ visit_day.date }}</h2>
+      <h5 class="text-muted">Mentor: {{ visit_day.visit.mentor.get_full_name|default:visit_day.visit.mentor.username }}</h5>
+    </div>
+    {% if is_mentor %}
+      <a href="{% url 'mentorship:assign-competence' visit_day.id %}" class="btn btn-primary shadow-sm">
+        ➕ Assign Competence
+      </a>
+    {% endif %}
+  </div>
 
-<form method="post" class="needs-validation" novalidate>
-  {% csrf_token %}
-  {{ form.non_field_errors }}
+  <!-- Section Header -->
+  <div class="mb-4">
+    <h3 class="border-bottom pb-2 fw-semibold">📋 Competence Assignments</h3>
+  </div>
 
-  {% for field in form %}
-    <div class="mb-3">
-      <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-      {{ field }}
-      {% if field.help_text %}
-        <div class="form-text">{{ field.help_text }}</div>
+  {% for mentee, assignments in mentee_assignments.items %}
+    <div class="mb-5 p-3 border rounded shadow-sm bg-white">
+      <h5 class="mb-3 fw-bold text-primary">👤 Mentee: {{ mentee.get_full_name|default:mentee.username }}</h5>
+
+      <ul class="list-unstyled">
+        {% for assignment in assignments %}
+          <li class="mb-3 p-2 border-bottom">
+            <p><strong>Patient ID (PID):</strong> {{ assignment.pid|default:"Not provided" }}</p>
+            <p>
+              <strong>Competence:</strong> {{ assignment.competence.name }}
+              {% if assignment.competence.description %} - {{ assignment.competence.description }}{% endif %}
+            </p>
+
+            {% if assignment.mentor_description %}
+              <p><strong>Mentor Guidance:</strong> {{ assignment.mentor_description }}</p>
+            {% endif %}
+
+            <p>
+              <strong>Status:</strong>
+              {% if assignment.status == 'pending' %}
+                <span class="badge bg-secondary">Pending</span>
+              {% elif assignment.status == 'assigned' %}
+                <span class="badge bg-info">Assigned</span>
+              {% elif assignment.status == 'completed' %}
+                <span class="badge bg-success">Self-Assessed</span>
+              {% elif assignment.status == 'reviewed' %}
+                <span class="badge bg-primary">Reviewed</span>
+              {% endif %}
+            </p>
+
+            <p>
+              <strong>Mentee Grade:</strong>
+              {% if assignment.mentee_grade %}
+                {{ assignment.mentee_grade.score }} - {{ assignment.mentee_grade.label }}
+              {% else %}
+                <span class="text-muted">Not yet assessed</span>
+              {% endif %}
+            </p>
+
+            <p>
+              <strong>Mentor Grade:</strong>
+              {% if assignment.mentor_grade %}
+                {{ assignment.mentor_grade.score }} - {{ assignment.mentor_grade.label }}
+              {% else %}
+                {% if is_mentor %}
+                  <a href="{% url 'mentorship:mentor-grade' assignment.id %}" class="btn btn-outline-primary btn-sm">
+                    Enter Grade
+                  </a>
+                {% else %}
+                  <span class="text-muted">Awaiting mentor grading</span>
+                {% endif %}
+              {% endif %}
+            </p>
+
+            <p><strong>Mentee Remarks:</strong> {{ assignment.mentee_remarks|default:"No remarks" }}</p>
+            <p><strong>Mentor Remarks:</strong> {{ assignment.mentor_remarks|default:"No remarks" }}</p>
+
+            {% if not is_mentor and request.user == mentee and assignment.status in 'assigned,pending' %}
+              <a href="{% url 'mentorship:mentee-self-assess' assignment.id %}" class="btn btn-success btn-sm mt-2">
+                ✏️ Self-Assess
+              </a>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+
+      {% if is_mentor %}
+        {% for m, form in mentee_summary_forms %}
+          {% if m == mentee %}
+            <div class="mt-4 p-3 border rounded bg-light">
+              <h6 class="fw-bold text-dark border-bottom pb-2">📝 Mentor Summary for {{ mentee.get_full_name|default:mentee.username }}</h6>
+              <form class="mentor-summary-form" data-mentee-id="{{ mentee.id }}" method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-primary mt-2">💾 Save Summary</button>
+                <span class="summary-feedback text-success ms-2" style="display:none;">✅ Saved!</span>
+              </form>
+            </div>
+          {% endif %}
+        {% endfor %}
       {% endif %}
-      {% for error in field.errors %}
-        <div class="invalid-feedback d-block">{{ error }}</div>
-      {% endfor %}
     </div>
   {% endfor %}
 
-  <div class="mt-4">
-    <button type="submit" class="btn btn-success me-2">Save Changes</button>
-    <a href="{% url 'mentorship:visit-detail' visit_day.visit.id %}" class="btn btn-secondary">Cancel</a>
-  </div>
-</form>
+  <a href="{% url 'mentorship:visit-detail' visit_day.visit.id %}" class="btn btn-secondary">🔙 Back to Visit</a>
+</div>
+{% endblock %}
 
-<script>
-(() => {
-  'use strict';
-  const forms = document.querySelectorAll('.needs-validation');
-  Array.from(forms).forEach(form => {
-    form.addEventListener('submit', event => {
-      if (!form.checkValidity()) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-      form.classList.add('was-validated');
-    }, false);
-  });
-})();
-</script>
+{% block extra_scripts %}
+<script src="{% static 'mentorship/js/mentor_summary.js' %}"></script>
 {% endblock %}

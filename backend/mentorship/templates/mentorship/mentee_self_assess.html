@@ -1,4 +1,7 @@
 {% extends 'base.html' %}
+
+{% block title %}Logbook - Mentee Self Assessment{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
   <div class="card shadow-sm">
@@ -16,29 +19,31 @@
       <form method="post">
         {% csrf_token %}
         
-        <div class="mb-3">
-          <label class="form-label"><strong>Patient ID (PID)</strong></label>
-          {{ form.pid }}
-          {% if form.pid.errors %}
-            <div class="text-danger small mt-1">{{ form.pid.errors }}</div>
-          {% endif %}
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label"><strong>Your Grade</strong></label>
-          <select name="mentee_grade" class="form-select">
-            <option value="">---</option>
-            {% for grade in form.fields.mentee_grade.queryset %}
-              <option value="{{ grade.pk }}" {% if assignment.mentee_grade and assignment.mentee_grade.pk == grade.pk %}selected{% endif %}>
-                {{ grade.score }} - {{ grade.label }}
-              </option>
-            {% endfor %}
-          </select>
-          {% if form.mentee_grade.errors %}
-            <div class="text-danger small mt-1">
-              {% for error in form.mentee_grade.errors %}{{ error }}{% endfor %}
-            </div>
-          {% endif %}
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label"><strong>Patient ID (PID)</strong></label>
+            {{ form.pid }}
+            {% if form.pid.errors %}
+              <div class="text-danger small mt-1">{{ form.pid.errors }}</div>
+            {% endif %}
+          </div>
+          
+          <div class="col-md-6">
+            <label class="form-label"><strong>Your Grade</strong></label>
+            <select name="mentee_grade" class="form-select">
+              <option value="">---</option>
+              {% for grade in form.fields.mentee_grade.queryset %}
+                <option value="{{ grade.pk }}" {% if assignment.mentee_grade and assignment.mentee_grade.pk == grade.pk %}selected{% endif %}>
+                  {{ grade.score }} - {{ grade.label }}
+                </option>
+              {% endfor %}
+            </select>
+            {% if form.mentee_grade.errors %}
+              <div class="text-danger small mt-1">
+                {% for error in form.mentee_grade.errors %}{{ error }}{% endfor %}
+              </div>
+            {% endif %}
+          </div>
         </div>
 
         <div class="mb-3">
@@ -49,14 +54,9 @@
           {% endif %}
         </div>
 
-        <p><strong>Grading Guide:</strong></p>
-        <ul>
-          {% for grade in form.fields.mentee_grade.queryset %}
-            <li>{{ grade.score }} - {{ grade.label }}</li>
-          {% endfor %}
-        </ul>
-
-        <button type="submit" class="btn btn-primary">Submit Self-Assessment</button>
+        <div class="d-flex justify-content-end">
+          <button type="submit" class="btn btn-primary">Submit Self-Assessment</button>
+        </div>
       </form>
 
       <a href="{% url 'mentorship:visit-day-detail' assignment.visit_day.id %}" class="btn btn-outline-secondary mt-3">

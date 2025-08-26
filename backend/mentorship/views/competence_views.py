@@ -63,6 +63,9 @@ class AssignCompetenceView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
     def get_success_url(self):
         return reverse('mentorship:assign-competence', kwargs={'visit_day_id': self.visit_day.id})
 
+    # def get_success_url(self):
+    #     return reverse_lazy('mentorship:assign-competence', kwargs={'pk': self.object.visit_day.id})
+
 
 class AssignedCompetenceDetailView(LoginRequiredMixin, AdminCheckMixin, DetailView):
     model = AssignedCompetence
