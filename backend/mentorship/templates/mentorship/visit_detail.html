@@ -49,7 +49,7 @@
       <tr>
         <th>Date</th>
         <th>Status</th>
-        <th>View</th>
+        <!-- <th>View</th> -->
         <th>Action</th>
       </tr>
     </thead>
@@ -73,11 +73,11 @@
           <td>
             <a href="{% url 'mentorship:visit-day-detail' item.day.id %}" class="btn btn-sm btn-info">View</a>
           </td>
-          <td>
+          <!-- <td>
             {% if request.user == visit.mentor %}
               <a href="{% url 'mentorship:assign-competence' item.day.id %}" class="btn btn-sm btn-primary">➕ Assign Competence</a>
             {% endif %}
-          </td>
+          </td> -->
         </tr>
       {% endfor %}
     </tbody>
