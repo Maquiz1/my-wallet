@@ -1,9 +1,10 @@
 from django import forms
-from .models import VisitDay, Visit, AssignedCompetence
+from .models import VisitDay, Visit, AssignedCompetence, MenteeGrade, MentorGrade
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 
 User = get_user_model()
+
 
 # -------------------------
 # Visit & VisitDay Forms
@@ -29,7 +30,6 @@ class VisitForm(forms.ModelForm):
         except Group.DoesNotExist:
             self.fields['mentor'].queryset = User.objects.none()
 
-        # Only admins can assign mentors
         if user and not user.groups.filter(name='Admin').exists() and not user.is_superuser:
             self.fields['mentor'].widget = forms.HiddenInput()
 
@@ -54,52 +54,40 @@ class VisitDayForm(forms.ModelForm):
 # Mentor Grade Form
 # -------------------------
 class MentorGradeForm(forms.ModelForm):
+    mentor_grade = forms.ModelChoiceField(
+        queryset=MentorGrade.objects.all(),
+        empty_label="--- Select Grade ---",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
     class Meta:
         model = AssignedCompetence
         fields = ['mentor_grade', 'mentor_remarks']
         widgets = {
-            'mentor_grade': forms.Select(
-                choices=AssignedCompetence.MENTOR_GRADE_CHOICES,
-                attrs={'class': 'form-select'}
-            ),
             'mentor_remarks': forms.Textarea(
-                attrs={'class': 'form-control', 'rows': 3}
+                attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Enter mentor remarks'}
             ),
         }
 
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)  # Capture logged-in mentor
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-
-        # If already graded, lock fields
-        if self.instance.pk and self.instance.mentor_grade:
-            self.fields['mentor_grade'].disabled = True
-            self.fields['mentor_remarks'].disabled = True
-
-    def save(self, commit=True):
-        instance = super().save(commit=False)
-
-        # Set mentor automatically if not set
-        if self.user and not instance.mentor:
-            instance.mentor = self.user
-
-        # Mark as completed
-        instance.set_completed(user=instance.mentor)
-
-        if commit:
-            instance.save()
-        return instance
 
 
 # -------------------------
 # Mentee Self-Assessment Form
 # -------------------------
 class MenteeSelfAssessmentForm(forms.ModelForm):
+    mentee_grade = forms.ModelChoiceField(
+        queryset=MenteeGrade.objects.all(),
+        empty_label="--- Select Grade ---",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
     class Meta:
         model = AssignedCompetence
         fields = ['mentee_grade', 'mentee_remarks', 'pid']
         widgets = {
-            'mentee_grade': forms.Select(attrs={'class': 'form-select'}),
             'mentee_remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'pid': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Patient ID'}),
         }
@@ -108,7 +96,6 @@ class MenteeSelfAssessmentForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
-        # Only mentee can edit
         if user and self.instance.mentee != user:
             for field in self.fields:
                 self.fields[field].disabled = True
@@ -141,7 +128,6 @@ class AssignedCompetenceForm(forms.ModelForm):
         visit_day = kwargs.pop('visit_day', None)
         super().__init__(*args, **kwargs)
 
-        # Only mentors can assign
         if user and not user.groups.filter(name='Mentor').exists() and not user.is_superuser:
             for field in self.fields:
                 self.fields[field].disabled = True
@@ -150,18 +136,16 @@ class AssignedCompetenceForm(forms.ModelForm):
             self.fields['visit_day'].initial = visit_day
 
         self.fields['mentee'].queryset = User.objects.filter(groups__name='Mentee')
+        self.fields['competence'].label_from_instance = lambda obj: f"{obj.name} - {obj.description}" if obj.description else obj.name
 
-        # Show "name - description" in competence dropdown
-        self.fields['competence'].label_from_instance = (
-            lambda obj: f"{obj.name} - {obj.description}" if obj.description else obj.name
-        )
-
-        # Lock fields if already self-assessed
-        if self.instance.pk and self.instance.is_self_assessed:
+        if self.instance.pk and self.instance.is_self_assessed():
             for field_name in ['mentee', 'disease', 'competence']:
                 self.fields[field_name].disabled = True
-                
-                
+
+
+# -------------------------
+# VisitDay Summary Form
+# -------------------------
 class VisitDaySummaryForm(forms.ModelForm):
     strengths = forms.ModelMultipleChoiceField(
         queryset=AssignedCompetence.objects.none(),
@@ -188,10 +172,7 @@ class VisitDaySummaryForm(forms.ModelForm):
         mentee = kwargs.pop('mentee', None)
         super().__init__(*args, **kwargs)
         if visit_day and mentee:
-            queryset = AssignedCompetence.objects.filter(
-                visit_day=visit_day,
-                mentee=mentee
-            )
+            queryset = AssignedCompetence.objects.filter(visit_day=visit_day, mentee=mentee)
             self.fields['strengths'].queryset = queryset
             self.fields['improvements'].queryset = queryset
 
@@ -206,4 +187,3 @@ class VisitDaySummaryForm(forms.ModelForm):
         if len(data) > 3:
             raise forms.ValidationError("You can select up to 3 areas for improvement only.")
         return data
-

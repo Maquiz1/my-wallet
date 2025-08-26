@@ -4,6 +4,7 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from django.contrib import messages
 from django.http import HttpResponseForbidden
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from urllib3 import request
 from .models import Visit, VisitDay, AssignedCompetence
 from .forms import VisitForm, VisitDayForm, AssignedCompetenceForm, MentorGradeForm, MenteeSelfAssessmentForm,VisitDaySummaryForm
 from django.core.exceptions import PermissionDenied
@@ -295,14 +296,25 @@ class MentorGradeView(UpdateView):
 
     def dispatch(self, request, *args, **kwargs):
         obj = self.get_object()
+        
+        # Ensure visit_day and visit exist
+        if not obj.visit_day or not obj.visit_day.visit:
+            return HttpResponseForbidden("Invalid assignment or visit day.")
+
+        # Only the assigned mentor can grade
         if obj.visit_day.visit.mentor != request.user:
             return HttpResponseForbidden("You are not allowed to grade this assignment.")
+
+        # Ensure mentee has self-assessed
         if not obj.is_self_assessed():
             return HttpResponseForbidden("Cannot grade before mentee self-assessment.")
+
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         obj = form.save(commit=False)
+
+        # Set completed/reviewed status
         obj.is_completed = True
         obj.status = 'reviewed'
         obj.updated_by = self.request.user
@@ -310,13 +322,15 @@ class MentorGradeView(UpdateView):
             obj.created_by = self.request.user
         obj.save()
 
-        # Update statuses
+        # Update visit_day and visit statuses
         obj.visit_day.update_status()
         obj.visit_day.visit.update_status()
 
-        messages.success(self.request, f"You have successfully graded {obj.mentee.get_full_name()}!")
+        messages.success(
+            self.request,
+            f"You have successfully graded {obj.mentee.get_full_name()}!"
+        )
         return redirect(self.get_success_url())
-
 
     def get_success_url(self):
         return reverse_lazy(
@@ -329,7 +343,6 @@ class MentorGradeView(UpdateView):
         context["assignment"] = self.object
         context['is_admin'] = self.request.user.is_superuser or self.request.user.groups.filter(name='Admin').exists()
         return context
-
 
 class MenteeSelfAssessmentView(LoginRequiredMixin, AdminCheckMixin, RoleRequiredMixin, UpdateView):
     model = AssignedCompetence

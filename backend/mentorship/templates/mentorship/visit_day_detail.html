@@ -1,83 +1,95 @@
 {% extends 'base.html' %}
 {% load static %}
 
-
 {% block content %}
-<h2>Visit Day: {{ visit_day.date }}</h2>
-<h4>Mentor: {{ visit_day.visit.mentor.get_full_name|default:visit_day.visit.mentor.username }}</h4>
+<div class="container mt-4">
+  <h2>Visit Day: {{ visit_day.date }}</h2>
+  <h4>Mentor: {{ visit_day.visit.mentor.get_full_name|default:visit_day.visit.mentor.username }}</h4>
 
-<h3>Competence Assignments</h3>
+  <h3>Competence Assignments</h3>
 
-{% for mentee, assignments in mentee_assignments.items %}
-<div class="mb-4 p-3 border rounded">
-  <h5>Mentee: {{ mentee.get_full_name|default:mentee.username }}</h5>
+  {% for mentee, assignments in mentee_assignments.items %}
+  <div class="mb-4 p-3 border rounded">
+    <h5>Mentee: {{ mentee.get_full_name|default:mentee.username }}</h5>
 
-  <ul>
-    {% for assignment in assignments %}
-    <li class="mb-2">
-      <strong>Patient ID (PID):</strong> {{ assignment.pid|default:"Not provided" }}<br>
-      <strong>Competence:</strong> {{ assignment.competence.name }}{% if assignment.competence.description %} - {{
-      assignment.competence.description }}{% endif %}<br>
+    <ul>
+      {% for assignment in assignments %}
+      <li class="mb-2">
+        <strong>Patient ID (PID):</strong> {{ assignment.pid|default:"Not provided" }}<br>
+        <strong>Competence:</strong> {{ assignment.competence.name }}
+        {% if assignment.competence.description %} - {{ assignment.competence.description }}{% endif %}<br>
 
-      {% if assignment.mentor_description %}
-      <strong>Mentor Guidance:</strong> {{ assignment.mentor_description }}<br>
-      {% endif %}
+        {% if assignment.mentor_description %}
+        <strong>Mentor Guidance:</strong> {{ assignment.mentor_description }}<br>
+        {% endif %}
 
-      <strong>Status:</strong>
-      {% if assignment.status == 'pending' %}
-      <span class="badge bg-secondary">Pending</span>
-      {% elif assignment.status == 'assigned' %}
-      <span class="badge bg-info">Assigned</span>
-      {% elif assignment.status == 'completed' %}
-      <span class="badge bg-success">Self-Assessed</span>
-      {% elif assignment.status == 'reviewed' %}
-      <span class="badge bg-primary">Reviewed</span>
-      {% endif %}<br>
+        <strong>Status:</strong>
+        {% if assignment.status == 'pending' %}
+          <span class="badge bg-secondary">Pending</span>
+        {% elif assignment.status == 'assigned' %}
+          <span class="badge bg-info">Assigned</span>
+        {% elif assignment.status == 'completed' %}
+          <span class="badge bg-success">Self-Assessed</span>
+        {% elif assignment.status == 'reviewed' %}
+          <span class="badge bg-primary">Reviewed</span>
+        {% endif %}<br>
 
-      <strong>Mentee Grade:</strong> {{ assignment.get_mentee_grade_display|default:"Not yet assessed" }}<br>
-      <strong>Mentor Grade:</strong>
-      {% if assignment.mentor_grade %}
-      {{ assignment.get_mentor_grade_display }}
-      {% else %}
-      {% if is_mentor %}
-      <a href="{% url 'mentorship:mentor-grade' assignment.id %}">Enter Grade</a>
-      {% else %}
-      Awaiting mentor grading
-      {% endif %}
-      {% endif %}<br>
+        <strong>Mentee Grade:</strong>
+        {% if assignment.mentee_grade %}
+          {{ assignment.mentee_grade.score }} - {{ assignment.mentee_grade.label }}
+        {% else %}
+          Not yet assessed
+        {% endif %}<br>
 
-      <strong>Mentee Remarks:</strong> {{ assignment.mentee_remarks|default:"No remarks" }}<br>
-      <strong>Mentor Remarks:</strong> {{ assignment.mentor_remarks|default:"No remarks" }}<br>
-    </li>
-    {% endfor %}
-  </ul>
+        <strong>Mentor Grade:</strong>
+        {% if assignment.mentor_grade %}
+          {{ assignment.mentor_grade.score }} - {{ assignment.mentor_grade.label }}
+        {% else %}
+          {% if is_mentor %}
+            <a href="{% url 'mentorship:mentor-grade' assignment.id %}">Enter Grade</a>
+          {% else %}
+            Awaiting mentor grading
+          {% endif %}
+        {% endif %}<br>
+
+        <strong>Mentee Remarks:</strong> {{ assignment.mentee_remarks|default:"No remarks" }}<br>
+        <strong>Mentor Remarks:</strong> {{ assignment.mentor_remarks|default:"No remarks" }}<br>
+
+        {% if not is_mentor and request.user == mentee and assignment.status in 'assigned,pending' %}
+          <a href="{% url 'mentorship:mentee-self-assess' assignment.id %}" class="btn btn-success btn-sm mt-2">
+            ✏️ Self-Assess
+          </a>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+
+    {% if is_mentor %}
+      {% for m, form in mentee_summary_forms %}
+        {% if m == mentee %}
+        <div class="mt-3 p-3 border rounded bg-light">
+          <h6>Mentor Summary for {{ mentee.get_full_name|default:mentee.username }}</h6>
+          <form class="mentor-summary-form" data-mentee-id="{{ mentee.id }}" method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary mt-2">Save Summary</button>
+            <span class="summary-feedback text-success ms-2" style="display:none;">Saved!</span>
+          </form>
+        </div>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+
+  </div>
+  <hr>
+  {% endfor %}
 
   {% if is_mentor %}
-  {% for m, form in mentee_summary_forms %}
-  {% if m == mentee %}
-  <div class="mt-3 p-3 border rounded bg-light">
-    <h6>Mentor Summary for {{ mentee.get_full_name|default:mentee.username }}</h6>
-    <form class="mentor-summary-form" data-mentee-id="{{ mentee.id }}" method="post">
-      {% csrf_token %}
-      {{ form.as_p }}
-      <button type="submit" class="btn btn-primary mt-2">Save Summary</button>
-      <span class="summary-feedback text-success ms-2" style="display:none;">Saved!</span>
-    </form>
-  </div>
-  {% endif %}
-  {% endfor %}
+    <a href="{% url 'mentorship:assign-competence' visit_day.id %}" class="btn btn-primary">➕ Assign Competence</a><br>
   {% endif %}
 
+  <a href="{% url 'mentorship:visit-detail' visit_day.visit.id %}" class="btn btn-secondary mt-2">🔙 Back to Visit</a>
 </div>
-<hr>
-{% endfor %}
-
-{% if is_mentor %}
-<a href="{% url 'mentorship:assign-competence' visit_day.id %}" class="btn btn-primary">➕ Assign Competence</a><br>
-{% endif %}
-
-<a href="{% url 'mentorship:visit-detail' visit_day.visit.id %}" class="btn btn-secondary mt-2">🔙 Back to Visit</a>
-
 {% endblock %}
 
 {% block extra_scripts %}

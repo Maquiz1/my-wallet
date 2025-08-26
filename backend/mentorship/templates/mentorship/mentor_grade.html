@@ -2,66 +2,86 @@
 
 {% block content %}
 <div class="container mt-4">
-  <h2>Mentor Grading: {{ assignment.competence.name }}
-    {% if assignment.competence.description %} - {{ assignment.competence.description }}{% endif %}
-  </h2>
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">Mentor Grading: {{ assignment.competence.name }}
+        {% if assignment.competence.description %} - {{ assignment.competence.description }}{% endif %}
+      </h4>
+    </div>
+    <div class="card-body">
+      <p><strong>Mentee:</strong> {{ assignment.mentee.get_full_name|default:assignment.mentee.username }}</p>
+      <p><strong>Patient ID:</strong> {{ assignment.pid|default:"Not provided" }}</p>
+      <p><strong>Mentor:</strong> {{ assignment.visit_day.visit.mentor.get_full_name|default:assignment.visit_day.visit.mentor.username }}</p>
+      <p><strong>Mentor Guidance:</strong> {{ assignment.mentor_description|default:"No description" }}</p>
 
-  <p><strong>Mentee:</strong> {{ assignment.mentee.get_full_name|default:assignment.mentee.username }}</p>
-  <p><strong>Patient ID:</strong> {{ assignment.pid|default:"Not provided" }}</p>
-  <p><strong>Mentor Description:</strong> {{ assignment.mentor_description|default:"No description" }}</p>
+      <form method="post">
+        {% csrf_token %}
+        <table class="table table-bordered align-middle">
+          <thead class="table-dark text-center">
+            <tr>
+              <th>Aspect</th>
+              <th>Mentee Self-Assessment</th>
+              <th>Mentor Grade</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Grade</td>
+              <td class="text-center">
+                {% if assignment.mentee_grade %}
+                  {{ assignment.mentee_grade.label }}
+                {% else %}
+                  <span class="text-muted">Not yet assessed</span>
+                {% endif %}
+              </td>
 
-  <form method="post">
-    {% csrf_token %}
-    <table class="table table-bordered">
-      <thead class="table-dark">
-        <tr>
-          <th>Aspect</th>
-          <th>Mentee Self-Assessment</th>
-          <th>Mentor Grade</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Grade</td>
-          <td>
-            {% if assignment.mentee_grade %}
-              {{ assignment.get_mentee_grade_display }}
-            {% else %}
-              Not yet assessed
-            {% endif %}
-          </td>
-          <td>
-            {% if assignment.mentor_grade %}
-              <input type="text" class="form-control bg-light"
-                     value="{{ assignment.get_mentor_grade_display }}" readonly>
-            {% else %}
-              {{ form.mentor_grade }}
-            {% endif %}
-          </td>
-        </tr>
-        <tr>
-          <td>Remarks</td>
-          <td>{{ assignment.mentee_remarks|default:"No remarks" }}</td>
-          <td>
-            {% if assignment.mentor_remarks %}
-              <textarea class="form-control bg-light" rows="3" readonly>
-                {{ assignment.mentor_remarks }}
-              </textarea>
-            {% else %}
-              {{ form.mentor_remarks }}
-            {% endif %}
-          </td>
-        </tr>
-      </tbody>
-    </table>
+              <td>
+                {% if assignment.mentor_grade %}
+                  <input type="text" class="form-control bg-light" value="{{ assignment.mentor_grade.label }}" readonly>
+                {% else %}
+                  {{ form.mentor_grade }}
+                  {% if form.mentor_grade.errors %}
+                    <div class="text-danger small mt-1">{{ form.mentor_grade.errors }}</div>
+                  {% endif %}
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <td>Remarks</td>
+              <td>
+                {% if assignment.mentee_remarks %}
+                  <div class="border p-2 bg-light rounded">{{ assignment.mentee_remarks }}</div>
+                {% else %}
+                  <span class="text-muted">No remarks</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if assignment.mentor_remarks %}
+                  <textarea class="form-control bg-light" rows="3" readonly>{{ assignment.mentor_remarks }}</textarea>
+                {% else %}
+                  {{ form.mentor_remarks }}
+                  {% if form.mentor_remarks.errors %}
+                    <div class="text-danger small mt-1">{{ form.mentor_remarks.errors }}</div>
+                  {% endif %}
+                {% endif %}
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-    {% if not assignment.mentor_grade %}
-      <button type="submit" class="btn btn-primary">Submit Grade</button>
-    {% endif %}
-  </form>
+        {% if not assignment.mentor_grade %}
+        <div class="d-flex justify-content-end">
+          <button type="submit" class="btn btn-success">
+            💾 Submit Grade
+          </button>
+        </div>
+        {% endif %}
+      </form>
 
-  <a href="{% url 'mentorship:visit-day-detail' assignment.visit_day.id %}" class="btn btn-outline-secondary mt-3">
-    🔙 Back to Visit Day
-  </a>
+      <a href="{% url 'mentorship:visit-day-detail' assignment.visit_day.id %}" class="btn btn-outline-secondary mt-3">
+        🔙 Back to Visit Day
+      </a>
+    </div>
+  </div>
 </div>
 {% endblock %}

@@ -1,44 +1,68 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>
-  Self-Assessment: {{ assignment.competence.name }}
-  {% if assignment.competence.description %} – {{ assignment.competence.description }}{% endif %}
-</h2>
+<div class="container mt-4">
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">Self-Assessment: {{ assignment.competence.name }}
+        {% if assignment.competence.description %} – {{ assignment.competence.description }}{% endif %}
+      </h4>
+    </div>
+    <div class="card-body">
+      {% if assignment.mentor_description %}
+      <p><strong>Mentor Guidance:</strong></p>
+      <p class="border p-2 bg-light">{{ assignment.mentor_description }}</p>
+      {% endif %}
 
-{% if assignment.mentor_description %}
-  <p><strong>Mentor Guidance:</strong></p>
-  <p class="border p-2 bg-light">{{ assignment.mentor_description }}</p>
-{% endif %}
+      <form method="post">
+        {% csrf_token %}
+        
+        <div class="mb-3">
+          <label class="form-label"><strong>Patient ID (PID)</strong></label>
+          {{ form.pid }}
+          {% if form.pid.errors %}
+            <div class="text-danger small mt-1">{{ form.pid.errors }}</div>
+          {% endif %}
+        </div>
 
-<form method="post">
-  {% csrf_token %}
-  
-  <div class="mb-3">
-    <label class="form-label"><strong>Patient ID (PID)</strong></label>
-    {{ form.pid }}
+        <div class="mb-3">
+          <label class="form-label"><strong>Your Grade</strong></label>
+          <select name="mentee_grade" class="form-select">
+            <option value="">---</option>
+            {% for grade in form.fields.mentee_grade.queryset %}
+              <option value="{{ grade.pk }}" {% if assignment.mentee_grade and assignment.mentee_grade.pk == grade.pk %}selected{% endif %}>
+                {{ grade.score }} - {{ grade.label }}
+              </option>
+            {% endfor %}
+          </select>
+          {% if form.mentee_grade.errors %}
+            <div class="text-danger small mt-1">
+              {% for error in form.mentee_grade.errors %}{{ error }}{% endfor %}
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label"><strong>Your Remarks</strong></label>
+          {{ form.mentee_remarks }}
+          {% if form.mentee_remarks.errors %}
+            <div class="text-danger small mt-1">{{ form.mentee_remarks.errors }}</div>
+          {% endif %}
+        </div>
+
+        <p><strong>Grading Guide:</strong></p>
+        <ul>
+          {% for grade in form.fields.mentee_grade.queryset %}
+            <li>{{ grade.score }} - {{ grade.label }}</li>
+          {% endfor %}
+        </ul>
+
+        <button type="submit" class="btn btn-primary">Submit Self-Assessment</button>
+      </form>
+
+      <a href="{% url 'mentorship:visit-day-detail' assignment.visit_day.id %}" class="btn btn-outline-secondary mt-3">
+        🔙 Back to Visit Day
+      </a>
+    </div>
   </div>
-
-  <div class="mb-3">
-    <label class="form-label"><strong>Your Grade</strong></label>
-    {{ form.mentee_grade }}
-  </div>
-
-  <div class="mb-3">
-    <label class="form-label"><strong>Your Remarks</strong></label>
-    {{ form.mentee_remarks }}
-  </div>
-
-  <p><strong>Grading Guide:</strong></p>
-  <ul>
-    <li>1 - I need help</li>
-    <li>2 - I have some understanding</li>
-    <li>3 - I can do it with guidance</li>
-    <li>4 - I am confident</li>
-    <li>5 - I can teach others</li>
-  </ul>
-
-  <button type="submit" class="btn btn-primary">Submit Self-Assessment</button>
-</form>
-
-<a href="{% url 'mentorship:visit-day-detail' assignment.visit_day.id %}">🔙 Back to Visit Day</a>
+</div>
 {% endblock %}

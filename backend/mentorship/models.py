@@ -9,13 +9,33 @@ import logging
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
-GRADE_CHOICES = [
-    ('', '---'),
-    ('Excellent', 'Excellent'),
-    ('Good', 'Good'),
-    ('Fair', 'Fair'),
-    ('Poor', 'Poor'),
-]
+class MenteeGrade(models.Model):
+    score = models.PositiveSmallIntegerField(unique=True)   # e.g. 1, 2, 3, 4, 5
+    label = models.CharField(max_length=50)                 # e.g. "Excellent"
+
+    class Meta:
+        ordering = ["score"]
+
+    def __str__(self):
+        return f"{self.score} - {self.label}"
+
+class MentorGrade(models.Model):
+    score = models.PositiveSmallIntegerField(unique=True)   # e.g. 1, 2, 3, 4, 5
+    label = models.CharField(max_length=50)                 # e.g. "Excellent"
+
+    class Meta:
+        ordering = ["score"]
+
+    def __str__(self):
+        return f"{self.score} - {self.label}"
+    
+# GRADE_CHOICES = [
+#     ('', '---'),
+#     ('Excellent', 'Excellent'),
+#     ('Good', 'Good'),
+#     ('Fair', 'Fair'),
+#     ('Poor', 'Poor'),
+# ]
 
 # class Status(models.Model):
 #     name = models.CharField(max_length=50, unique=True)  # e.g., Assigned, Completed, Reviewed
@@ -179,21 +199,21 @@ class VisitDay(models.Model):
 
 class AssignedCompetence(models.Model):
     
-    MENTEE_GRADE_CHOICES = [
-        (1, '1 - I need help'),
-        (2, '2 - I have some understanding'),
-        (3, '3 - I can do it with guidance'),
-        (4, '4 - I am confident'),
-        (5, '5 - I can teach others'),
-    ]
+    # MENTEE_GRADE_CHOICES = [
+    #     (1, '1 - I need help'),
+    #     (2, '2 - I have some understanding'),
+    #     (3, '3 - I can do it with guidance'),
+    #     (4, '4 - I am confident'),
+    #     (5, '5 - I can teach others'),
+    # ]
 
-    MENTOR_GRADE_CHOICES = [
-        (1, "Needs Improvement"),
-        (2, "Fair"),
-        (3, "Good"),
-        (4, "Very Good"),
-        (5, "Excellent"),
-    ]
+    # MENTOR_GRADE_CHOICES = [
+    #     (1, "Needs Improvement"),
+    #     (2, "Fair"),
+    #     (3, "Good"),
+    #     (4, "Very Good"),
+    #     (5, "Excellent"),
+    # ]
     
     STATUS_CHOICES = [
         ("pending", "Pending"),
@@ -216,10 +236,11 @@ class AssignedCompetence(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     is_completed = models.BooleanField(default=False)
 
-    mentee_grade = models.IntegerField(choices=MENTEE_GRADE_CHOICES, blank=True, null=True)
-    mentee_remarks = models.TextField(blank=True, null=True)
-    mentor_grade = models.IntegerField(choices=MENTOR_GRADE_CHOICES, blank=True, null=True)
     mentor_description = models.TextField(blank=True, null=True)  # Added by mentor during assignment
+    mentee_grade = models.ForeignKey(MenteeGrade, on_delete=models.SET_NULL, blank=True, null=True)
+    mentor_grade = models.ForeignKey(MentorGrade, on_delete=models.SET_NULL, blank=True, null=True)
+
+    mentee_remarks = models.TextField(blank=True, null=True)
     mentor_remarks = models.TextField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -239,16 +260,12 @@ class AssignedCompetence(models.Model):
             raise ValidationError("Mentor cannot assign competencies to themselves.")
 
         # Mentor grade validation
-        if self.mentor_grade and self.mentor_grade not in dict(self.MENTOR_GRADE_CHOICES).keys():
-            raise ValidationError(
-                f"Mentor grade must be one of: {', '.join([label for _, label in self.MENTOR_GRADE_CHOICES])}."
-            )
+        if self.mentor_grade and not MentorGrade.objects.filter(pk=self.mentor_grade.pk).exists():
+            raise ValidationError("Selected mentor grade is invalid.")
 
         # Mentee grade validation
-        if self.mentee_grade and self.mentee_grade not in dict(self.MENTEE_GRADE_CHOICES).keys():
-            raise ValidationError(
-                f"Mentee grade must be one of: {', '.join([label for _, label in self.MENTEE_GRADE_CHOICES])}."
-            )
+        if self.mentee_grade and not MenteeGrade.objects.filter(pk=self.mentee_grade.pk).exists():
+            raise ValidationError("Selected mentee grade is invalid.")
 
 
     def __str__(self):
