@@ -1,10 +1,9 @@
-from django.db.models import Count
-from datetime import timedelta, date
-from mentorship.models import Visit, AssignedCompetence
-from locations.models import Country
-from clinical.models import Disease
+from clinical.models import Disease,Competence
+from mentorship.models import Visit, VisitDay, AssignedCompetence
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.views.generic import TemplateView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView,TemplateView
+from datetime import date, timedelta
+from django.db.models import Count
 
 
 class DashboardHomeView(LoginRequiredMixin, TemplateView):
@@ -15,11 +14,37 @@ class DashboardHomeView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
-        # Counts
-        context['country_count'] = Country.objects.count()
-        context['disease_count'] = Disease.objects.count()
-        context['visit_count'] = Visit.objects.count()
-        context['recent_visits'] = Visit.objects.select_related('site', 'mentor').order_by('-start_date')[:5]
+        # Total visits
+        total_visits = Visit.objects.count()
+        context['total_visits'] = total_visits
+
+        # Completed visits
+        completed_visits = Visit.objects.filter(status='completed').count()  # or the appropriate field to track completion
+        context['completed_visits'] = completed_visits
+
+        # Progress percentage
+        if total_visits > 0:
+            context['visits_percentage'] = int((completed_visits / total_visits) * 100)
+        else:
+            context['visits_percentage'] = 0
+        
+        # Total number of competences from Competence model
+        total_competences = Competence.objects.aggregate(total=Count('id'))['total']  # replace Disease if needed
+        context['total_competences'] = total_competences
+
+        # Count unique competences that have been assessed in AssignedCompetence
+        assessed_competences_qs = AssignedCompetence.objects.filter(
+            status__in=['completed', 'reviewed']
+        ).values_list('competence', flat=True).distinct()  # distinct ensures no duplicates
+        context['assessed_competences'] = assessed_competences_qs.count()
+
+        # Compute percentage
+        if total_competences > 0:
+            context['assessed_percentage'] = int((context['assessed_competences'] / total_competences) * 100)
+        else:
+            context['assessed_percentage'] = 0
+
+
 
         # Roles
         context['is_admin'] = user.is_superuser or user.groups.filter(name='Admin').exists()
@@ -31,7 +56,7 @@ class DashboardHomeView(LoginRequiredMixin, TemplateView):
         context['visits_chart_labels'] = [v['site__name'] for v in visits_per_site]
         context['visits_chart_data'] = [v['count'] for v in visits_per_site]
 
-        # Mentee submissions last 7 days
+        # Recent activity
         last_7_days = date.today() - timedelta(days=6)
         submissions = (
             AssignedCompetence.objects.filter(created_at__date__gte=last_7_days)
@@ -44,7 +69,7 @@ class DashboardHomeView(LoginRequiredMixin, TemplateView):
         counts_dict = {s['day'].strftime("%a"): s['count'] for s in submissions}
         context['activity_chart_data'] = [counts_dict.get((last_7_days + timedelta(days=i)).strftime("%a"), 0) for i in range(7)]
 
-        # Recent activity (latest 5 assignments)
+        # Recent assignments
         context['recent_activity'] = AssignedCompetence.objects.select_related('mentee', 'competence', 'visit_day') \
             .order_by('-created_at')[:5]
 
