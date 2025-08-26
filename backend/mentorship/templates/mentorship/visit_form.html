@@ -1,59 +1,102 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Logbook - Mentorship Visit Form{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">Add New Visit</h2>
-
-{% if is_admin %}
-<form method="post" class="needs-validation" novalidate>
-  {% csrf_token %}
-  {{ form.non_field_errors }}
-
-  {% for field in form %}
-    <div class="mb-3">
-      <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-      {{ field }}
-
-      {% if field.help_text %}
-        <div class="form-text">{{ field.help_text }}</div>
-      {% endif %}
-
-      {% for error in field.errors %}
-        <div class="invalid-feedback d-block">
-          {{ error }}
-        </div>
-      {% endfor %}
-    </div>
-  {% endfor %}
-
-  <div class="mt-4">
-    <button type="submit" class="btn btn-success me-2">Create Visit</button>
-    <a href="{% url 'mentorship:visit-list' %}" class="btn btn-secondary me-2">Cancel</a>
-    <a href="{% url 'dashboard:dashboard' %}" class="btn btn-outline-primary">Back to Dashboard</a>
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Add New Visit</h2>
+    {% if is_admin %}
+      <button type="submit" form="visit-form" class="btn btn-success">Create Visit</button>
+    {% endif %}
   </div>
-</form>
-{% else %}
-<p class="alert alert-warning">
-    You do not have permission to create a new visit.
-</p>
-<a href="{% url 'mentorship:visit-list' %}" class="btn btn-secondary me-2">Back to Visit List</a>
-{% endif %}
 
-<script>
-// Bootstrap 5 validation example (optional)
-(() => {
-  'use strict';
-  const forms = document.querySelectorAll('.needs-validation');
-  Array.from(forms).forEach(form => {
-    form.addEventListener('submit', event => {
-      if (!form.checkValidity()) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-      form.classList.add('was-validated');
-    }, false);
-  });
-})();
-</script>
+  {% if is_admin %}
+  <form id="visit-form" method="post" class="needs-validation" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <label for="{{ form.site.id_for_label }}" class="form-label">{{ form.site.label }}</label>
+        {{ form.site }}
+        {% if form.site.help_text %}
+          <div class="form-text">{{ form.site.help_text }}</div>
+        {% endif %}
+        {% for error in form.site.errors %}
+          <div class="invalid-feedback d-block">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="col-md-6">
+        <label for="{{ form.mentor.id_for_label }}" class="form-label">{{ form.mentor.label }}</label>
+        {{ form.mentor }}
+        {% if form.mentor.help_text %}
+          <div class="form-text">{{ form.mentor.help_text }}</div>
+        {% endif %}
+        {% for error in form.mentor.errors %}
+          <div class="invalid-feedback d-block">{{ error }}</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <label for="{{ form.start_date.id_for_label }}" class="form-label">{{ form.start_date.label }}</label>
+        {{ form.start_date }}
+        {% if form.start_date.help_text %}
+          <div class="form-text">{{ form.start_date.help_text }}</div>
+        {% endif %}
+        {% for error in form.start_date.errors %}
+          <div class="invalid-feedback d-block">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="col-md-6">
+        <label for="{{ form.end_date.id_for_label }}" class="form-label">{{ form.end_date.label }}</label>
+        {{ form.end_date }}
+        {% if form.end_date.help_text %}
+          <div class="form-text">{{ form.end_date.help_text }}</div>
+        {% endif %}
+        {% for error in form.end_date.errors %}
+          <div class="invalid-feedback d-block">{{ error }}</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% comment %} Render any additional fields that are not site, mentor, start_date, end_date {% endcomment %}
+    {% for field in form %}
+      {% if field.name not in "site mentor start_date end_date" %}
+      <div class="mb-3">
+        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}
+          <div class="form-text">{{ field.help_text }}</div>
+        {% endif %}
+        {% for error in field.errors %}
+          <div class="invalid-feedback d-block">{{ error }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endfor %}
+
+    <div class="mt-4 d-flex flex-wrap gap-2">
+      <a href="{% url 'mentorship:visit-list' %}" class="btn btn-secondary">Cancel</a>
+      <a href="{% url 'dashboard:dashboard' %}" class="btn btn-outline-primary">Back to Dashboard</a>
+    </div>
+  </form>
+
+  {% else %}
+  <div class="alert alert-warning">
+    You do not have permission to create a new visit.
+  </div>
+  <a href="{% url 'mentorship:visit-list' %}" class="btn btn-secondary">Back to Visit List</a>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'mentorship/js/visit_form_validation.js' %}"></script>
 {% endblock %}
