@@ -1,4 +1,6 @@
 {% extends 'base.html' %}
+
+{% block title %}Logbook - Mentorship Lists{% endblock %}
 {% block content %}
   <h2>Visit Schedule</h2>
 
@@ -37,6 +39,8 @@
                 <span class="badge bg-success">Completed</span>
               {% elif visit.status == 'reviewed' %}
                 <span class="badge bg-primary">Reviewed</span>
+              {% else %}
+                <span class="badge bg-secondary">Created</span>
               {% endif %}
             </td>
             {% if is_admin %}
