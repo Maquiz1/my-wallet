@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 
+{% block title %}Logbook - Dashboard{% endblock %}
+
 {% block titlebar %}
 Dashboard — {{ user.get_full_name|default:user.username }}
 {% endblock %}

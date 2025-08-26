@@ -10,15 +10,21 @@
     <tr>
       <th>#</th>
       <th>Competence Name</th>
+      <th>Description</th>
       <th>Assessments</th>
       <th>Actions</th>
     </tr>
   </thead>
   <tbody>
-    {% for competence in disease.competences.all %}
+    {% for competence in competences %}
     <tr>
       <td>{{ forloop.counter }}</td>
-      <td><a href="{% url 'clinical:competence-detail' competence.id %}">{{ competence.name }}</a></td>
+      <td>
+        <a href="{% url 'clinical:competence-detail' competence.id %}">
+          {{ competence.name }}
+        </a>
+      </td>
+      <td>{{ competence.description|default:"—" }}</td>
       <td>{{ competence.assessment_count }}</td>
       <td>
         <a href="{% url 'clinical:competence-detail' competence.id %}" class="btn btn-sm btn-primary">
@@ -28,7 +34,7 @@
     </tr>
     {% empty %}
     <tr>
-      <td colspan="4" class="text-center">No competences available.</td>
+      <td colspan="5" class="text-center">No competences available.</td>
     </tr>
     {% endfor %}
   </tbody>
