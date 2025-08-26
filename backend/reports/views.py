@@ -2,6 +2,8 @@ from django.shortcuts import render
 from mentorship.models import Visit, VisitDay, AssignedCompetence
 from django.db.models import Count, Q
 import json
+from django.db.models import Case, When, BooleanField, Value
+
 
 def dashboard_report(request):
     # Visits per Site
@@ -14,11 +16,24 @@ def dashboard_report(request):
     progress_data = [v['total'] for v in progress_qs]
 
     # Competence Completion Status
-    status_qs = AssignedCompetence.objects.aggregate(
+    # status_qs = AssignedCompetence.objects.aggregate(
+    #     completed=Count('id', filter=Q(is_completed=True)),
+    #     pending=Count('id', filter=Q(is_completed=False, is_self_assessed=True)),
+    #     in_progress=Count('id', filter=Q(is_self_assessed=False))
+    # )
+    
+    status_qs = AssignedCompetence.objects.annotate(
+        is_self_assessed=Case(
+            When(mentee_grade__isnull=False, then=Value(True)),
+            default=Value(False),
+            output_field=BooleanField(),
+        )
+    ).aggregate(
         completed=Count('id', filter=Q(is_completed=True)),
         pending=Count('id', filter=Q(is_completed=False, is_self_assessed=True)),
         in_progress=Count('id', filter=Q(is_self_assessed=False))
     )
+    
     competence_status = {
         'Completed': status_qs['completed'],
         'Pending': status_qs['pending'],

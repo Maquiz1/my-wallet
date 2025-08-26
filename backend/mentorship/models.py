@@ -199,22 +199,6 @@ class VisitDay(models.Model):
 
 class AssignedCompetence(models.Model):
     
-    # MENTEE_GRADE_CHOICES = [
-    #     (1, '1 - I need help'),
-    #     (2, '2 - I have some understanding'),
-    #     (3, '3 - I can do it with guidance'),
-    #     (4, '4 - I am confident'),
-    #     (5, '5 - I can teach others'),
-    # ]
-
-    # MENTOR_GRADE_CHOICES = [
-    #     (1, "Needs Improvement"),
-    #     (2, "Fair"),
-    #     (3, "Good"),
-    #     (4, "Very Good"),
-    #     (5, "Excellent"),
-    # ]
-    
     STATUS_CHOICES = [
         ("pending", "Pending"),
         ("assigned", "Assigned"),
