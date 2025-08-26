@@ -1,4 +1,7 @@
 {% extends 'base.html' %}
+
+{% block title %}Logbook - District Details{% endblock %}
+
 {% block content %}
 <h2>District: {{ object.name }}</h2>
 <p>Region: <a href="{% url 'locations:region-detail' object.region.id %}">{{ object.region.name }}</a></p>

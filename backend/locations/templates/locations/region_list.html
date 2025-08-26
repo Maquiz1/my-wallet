@@ -1,7 +1,9 @@
 {% extends 'base.html' %}
 
+{% block title %}Logbook - Region List{% endblock %}
+
 {% block content %}
-<h2>Countries</h2>
+<h2>Regions</h2>
 <ul>
     {% for country in countries %}
         <li><a href="{% url 'locations:region-detail' region.id %}">{{ region.name }}</a></li>

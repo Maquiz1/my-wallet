@@ -1,3 +1,9 @@
+{% extends 'base.html' %}
+
+{% block title %}Logbook - Site List{% endblock %}
+
+{% block content %}
+
 <h2>Sites in {{ district.name }}</h2>
 <ul>
   {% for site in sites %}
@@ -5,3 +11,5 @@
   {% endfor %}
 </ul>
 <a href="{% url 'district-list' district.region.id %}">← Back to districts</a>
+
+{% endblock %}
