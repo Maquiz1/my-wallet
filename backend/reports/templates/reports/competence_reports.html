@@ -32,7 +32,7 @@
 </form>
 
 <!-- Report Table -->
-<table class="table table-bordered">
+<table class="table table-bordered" id="competenceTable">
     <thead class="table-dark">
         <tr>
             <th>Disease</th>
@@ -42,27 +42,54 @@
         </tr>
     </thead>
     <tbody>
-        <!-- Filled dynamically via JS -->
+        <!-- JS will fill -->
     </tbody>
 </table>
 
-<!-- Charts -->
-<div class="row">
-    <div class="col-md-6 mb-4">
+<!-- Charts: First Row (Pie) -->
+<div class="row mt-4" id="pieChartsRow">
+    <div class="col-md-4 mb-4" id="overallPieContainer">
         <div class="card p-3 shadow-sm">
-            <h5 class="card-title">Mentor Grade Distribution</h5>
+            <h5 class="card-title" id="overallPieTitle">Overall Grade Distribution</h5>
+            <canvas id="overallPieChart"></canvas>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4" id="mentorPieContainer">
+        <div class="card p-3 shadow-sm">
+            <h5 class="card-title" id="mentorPieTitle">Mentor Grade Distribution</h5>
             <canvas id="mentorPieChart"></canvas>
         </div>
     </div>
-    <div class="col-md-6 mb-4">
+    <div class="col-md-4 mb-4" id="menteePieContainer">
         <div class="card p-3 shadow-sm">
-            <h5 class="card-title">Mentee Grade Distribution</h5>
+            <h5 class="card-title" id="menteePieTitle">Mentee Grade Distribution</h5>
+            <canvas id="menteePieChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Charts: Second Row (Doughnut) -->
+<div class="row mt-4" id="doughnutChartsRow">
+    <div class="col-md-4 mb-4" id="overallDoughnutContainer">
+        <div class="card p-3 shadow-sm">
+            <h5 class="card-title" id="overallDoughnutTitle">Overall Grade Distribution</h5>
+            <canvas id="overallDoughnutChart"></canvas>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4" id="mentorDoughnutContainer">
+        <div class="card p-3 shadow-sm">
+            <h5 class="card-title" id="mentorDoughnutTitle">Mentor Grade Distribution</h5>
+            <canvas id="mentorDoughnutChart"></canvas>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4" id="menteeDoughnutContainer">
+        <div class="card p-3 shadow-sm">
+            <h5 class="card-title" id="menteeDoughnutTitle">Mentee Grade Distribution</h5>
             <canvas id="menteeDoughnutChart"></canvas>
         </div>
     </div>
 </div>
 
-<!-- Export Buttons -->
 <div class="mt-3">
     <a href="{% url 'reports:competence-export-excel' %}?{% if selected_disease %}disease={{ selected_disease }}&{% endif %}grade={{ selected_grade }}"
         class="btn btn-success">Export Excel</a>
@@ -75,86 +102,91 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const mentorCtx = document.getElementById('mentorPieChart').getContext('2d');
-    const menteeCtx = document.getElementById('menteeDoughnutChart').getContext('2d');
+    // Chart contexts
+    const charts = {
+        overallPie: new Chart(document.getElementById('overallPieChart').getContext('2d'), { type: 'pie', data: { labels: [], datasets:[{data:[], backgroundColor: ['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd']}] } }),
+        mentorPie: new Chart(document.getElementById('mentorPieChart').getContext('2d'), { type: 'pie', data: { labels: [], datasets:[{data:[], backgroundColor: ['#17a2b8','#6f42c1','#28a745','#ffc107','#fd7e14']}] } }),
+        menteePie: new Chart(document.getElementById('menteePieChart').getContext('2d'), { type: 'pie', data: { labels: [], datasets:[{data:[], backgroundColor: ['#007bff','#6610f2','#20c997','#fd7e14','#e83e8c']}] } }),
+        overallDoughnut: new Chart(document.getElementById('overallDoughnutChart').getContext('2d'), { type: 'doughnut', data: { labels: [], datasets:[{data:[], backgroundColor: ['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd']}] } }),
+        mentorDoughnut: new Chart(document.getElementById('mentorDoughnutChart').getContext('2d'), { type: 'doughnut', data: { labels: [], datasets:[{data:[], backgroundColor: ['#17a2b8','#6f42c1','#28a745','#ffc107','#fd7e14']}] } }),
+        menteeDoughnut: new Chart(document.getElementById('menteeDoughnutChart').getContext('2d'), { type: 'doughnut', data: { labels: [], datasets:[{data:[], backgroundColor: ['#007bff','#6610f2','#20c997','#fd7e14','#e83e8c']}] } }),
+    };
 
-    let mentorChart = new Chart(mentorCtx, {
-        type: 'pie',
-        data: { labels: [], datasets: [{ data: [], backgroundColor: ['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd'], borderWidth: 1 }] },
-        options: { responsive: true, plugins: { legend: { position: 'top' } } }
-    });
-
-    let menteeChart = new Chart(menteeCtx, {
-        type: 'doughnut',
-        data: { labels: [], datasets: [{ data: [], backgroundColor: ['#28a745','#ffc107','#17a2b8','#6f42c1','#fd7e14'], borderWidth: 1 }] },
-        options: { responsive: true, plugins: { legend: { position: 'right' } } }
-    });
-
-    function fetchFilteredData() {
+    function fetchData() {
         const disease = document.getElementById('disease').value;
         const grade = document.getElementById('grade').value;
 
-        fetch(`?disease=${disease}&grade=${grade}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        fetch(`?disease=${disease}&grade=${grade}`, { headers:{ 'X-Requested-With':'XMLHttpRequest'} })
         .then(res => res.json())
         .then(data => {
-            // Hide/show columns
-            const showOverall = grade === 'all';
-            const showMentor = grade === 'all' || grade === 'mentor';
-            const showMentee = grade === 'all' || grade === 'mentee';
-
-            document.querySelectorAll('.overall-col').forEach(el => el.style.display = showOverall ? '' : 'none');
-            document.querySelectorAll('.mentor-col').forEach(el => el.style.display = showMentor ? '' : 'none');
-            document.querySelectorAll('.mentee-col').forEach(el => el.style.display = showMentee ? '' : 'none');
-
-            // Update table
-            const tbody = document.querySelector('table tbody');
+            const tbody = document.querySelector('#competenceTable tbody');
             tbody.innerHTML = '';
+            const showOverall = grade==='all';
+            const showMentor = grade==='all'||grade==='mentor';
+            const showMentee = grade==='all'||grade==='mentee';
+
+            // Table columns
+            document.querySelectorAll('#competenceTable th.overall-col, #competenceTable td.overall-col').forEach(el => el.style.display=showOverall?'':'none');
+            document.querySelectorAll('#competenceTable th.mentor-col, #competenceTable td.mentor-col').forEach(el => el.style.display=showMentor?'':'none');
+            document.querySelectorAll('#competenceTable th.mentee-col, #competenceTable td.mentee-col').forEach(el => el.style.display=showMentee?'':'none');
+
             const countRows = data.avg_grade_per_disease.length;
-            let totalMentor = 0, totalMentee = 0;
-
-            if(countRows === 0){
-                tbody.innerHTML = '<tr><td colspan="4">No data available.</td></tr>';
+            let totalMentor=0, totalMentee=0;
+            if(countRows===0){
+                const colspan = 1 + (showOverall?1:0) + (showMentor?1:0) + (showMentee?1:0);
+                tbody.innerHTML = `<tr><td colspan="${colspan}">No data available.</td></tr>`;
             } else {
-                data.avg_grade_per_disease.forEach(item => {
-                    const overall = item.avg_mentor_grade && item.avg_mentee_grade ? ((item.avg_mentor_grade + item.avg_mentee_grade)/2).toFixed(2) : '-';
-                    const row = `<tr>
+                data.avg_grade_per_disease.forEach(item=>{
+                    const overall = item.avg_mentor_grade && item.avg_mentee_grade ? ((item.avg_mentor_grade+item.avg_mentee_grade)/2).toFixed(2) : '-';
+                    tbody.innerHTML+=`<tr>
                         <td>${item.competence__disease__name}</td>
-                        <td class="overall-col">${overall}</td>
-                        <td class="mentor-col">${item.avg_mentor_grade ? item.avg_mentor_grade.toFixed(2) : '-'}</td>
-                        <td class="mentee-col">${item.avg_mentee_grade ? item.avg_mentee_grade.toFixed(2) : '-'}</td>
+                        <td class="overall-col">${showOverall?overall:''}</td>
+                        <td class="mentor-col">${showMentor?(item.avg_mentor_grade?item.avg_mentor_grade.toFixed(2):'-'):''}</td>
+                        <td class="mentee-col">${showMentee?(item.avg_mentee_grade?item.avg_mentee_grade.toFixed(2):'-'):''}</td>
                     </tr>`;
-                    tbody.innerHTML += row;
-                    totalMentor += item.avg_mentor_grade || 0;
-                    totalMentee += item.avg_mentee_grade || 0;
+                    totalMentor+=item.avg_mentor_grade||0;
+                    totalMentee+=item.avg_mentee_grade||0;
                 });
-
-                const overallTotal = showOverall ? ((totalMentor + totalMentee)/countRows/2).toFixed(2) : '';
-                const totalRow = `<tr class="table-secondary fw-bold">
+                const overallTotal = showOverall?((totalMentor+totalMentee)/countRows/2).toFixed(2):'';
+                tbody.innerHTML+=`<tr class="table-secondary fw-bold">
                     <td>Total / Average</td>
                     <td class="overall-col">${overallTotal}</td>
-                    <td class="mentor-col">${showMentor ? (totalMentor / countRows).toFixed(2) : ''}</td>
-                    <td class="mentee-col">${showMentee ? (totalMentee / countRows).toFixed(2) : ''}</td>
+                    <td class="mentor-col">${showMentor?(totalMentor/countRows).toFixed(2):''}</td>
+                    <td class="mentee-col">${showMentee?(totalMentee/countRows).toFixed(2):''}</td>
                 </tr>`;
-                tbody.innerHTML += totalRow;
             }
 
             // Update charts
-            mentorChart.data.labels = showMentor ? data.mentor_grade_labels : [];
-            mentorChart.data.datasets[0].data = showMentor ? data.mentor_grade_data : [];
-            mentorChart.update();
+            charts.overallPie.data.labels = showOverall?data.overall_grade_labels:[];
+            charts.overallPie.data.datasets[0].data = showOverall?data.overall_grade_data:[];
+            charts.overallPie.update();
 
-            menteeChart.data.labels = showMentee ? data.mentee_grade_labels : [];
-            menteeChart.data.datasets[0].data = showMentee ? data.mentee_grade_data : [];
-            menteeChart.update();
+            charts.mentorPie.data.labels = showMentor?data.mentor_grade_labels:[];
+            charts.mentorPie.data.datasets[0].data = showMentor?data.mentor_grade_data:[];
+            charts.mentorPie.update();
+
+            charts.menteePie.data.labels = showMentee?data.mentee_grade_labels:[];
+            charts.menteePie.data.datasets[0].data = showMentee?data.mentee_grade_data:[];
+            charts.menteePie.update();
+
+            charts.overallDoughnut.data.labels = showOverall?data.overall_grade_labels:[];
+            charts.overallDoughnut.data.datasets[0].data = showOverall?data.overall_grade_data:[];
+            charts.overallDoughnut.update();
+
+            charts.mentorDoughnut.data.labels = showMentor?data.mentor_grade_labels:[];
+            charts.mentorDoughnut.data.datasets[0].data = showMentor?data.mentor_grade_data:[];
+            charts.mentorDoughnut.update();
+
+            charts.menteeDoughnut.data.labels = showMentee?data.mentee_grade_labels:[];
+            charts.menteeDoughnut.data.datasets[0].data = showMentee?data.mentee_grade_data:[];
+            charts.menteeDoughnut.update();
         });
     }
 
-    // Trigger fetch on filter change
-    document.getElementById('disease').addEventListener('change', fetchFilteredData);
-    document.getElementById('grade').addEventListener('change', fetchFilteredData);
+    document.getElementById('disease').addEventListener('change', fetchData);
+    document.getElementById('grade').addEventListener('change', fetchData);
 
-    // Initial fetch
-    fetchFilteredData();
+    fetchData();
 });
 </script>
 {% endblock %}
