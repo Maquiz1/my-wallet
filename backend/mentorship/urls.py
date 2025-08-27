@@ -1,5 +1,6 @@
 from django.urls import path
 from mentorship.views import (
+    CompetenceByDiseaseView,
     IndexView,
     VisitListView,
     VisitDetailView,
@@ -8,7 +9,7 @@ from mentorship.views import (
     VisitDayUpdateView,
     VisitDayDeleteView,
     VisitDayDetailView,
-    AssignCompetenceView,
+    AssignedCompetenceView,
     AssignedCompetenceUpdateView,
     AssignedCompetenceDetailView,
     MentorGradeView,
@@ -16,6 +17,8 @@ from mentorship.views import (
     AllAssessmentsListView,
     AssignedCompetenceDeleteView
 )
+
+# from mentorship.views import visit_views
 
 app_name = 'mentorship'
 
@@ -35,12 +38,14 @@ urlpatterns = [
     path('visit-day/<int:pk>/', VisitDayDetailView.as_view(), name='visit-day-detail'),
 
     # Assign Competencies
-    path('visit-day/<int:visit_day_id>/assign/', AssignCompetenceView.as_view(), name='assign-competence'),  # Mentor only
+    path('visit-day/<int:visit_day_id>/assign/', AssignedCompetenceView.as_view(), name='assign-competence'),  # Mentor only
 
     # Assigned Competence
     path('assigned-competence/<int:pk>/edit/', AssignedCompetenceUpdateView.as_view(), name='assigned-competence-edit'),
     path('assigned-competence/<int:pk>/view/', AssignedCompetenceDetailView.as_view(), name='assigned-competence-view'),
     path('assigned-competence/<int:pk>/delete/', AssignedCompetenceDeleteView.as_view(), name='assigned-competence-delete'),
+
+    path("competence-by-disease/", CompetenceByDiseaseView.as_view(), name="competence-by-disease"),
 
     # Mentor and Mentee actions
     path('assignment/<int:pk>/mentor-grade/', MentorGradeView.as_view(), name='mentor-grade'),       # Mentor only

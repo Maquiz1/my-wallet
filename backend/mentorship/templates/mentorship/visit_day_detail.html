@@ -5,23 +5,37 @@
 
 {% block content %}
 <div class="container mt-4">
-  <!-- Page Header -->
+  <!-- Top Buttons -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <!-- Top Left: Back to Visit -->
+    <a href="{% url 'mentorship:visit-detail' visit_day.visit.id %}" class="btn btn-outline-secondary">
+      ⬅ Back to Visit
+    </a>
+
+    <!-- Top Right: Go to Dashboard -->
+    <a href="{% url 'dashboard:dashboard' %}" class="btn btn-primary shadow-sm">
+      🏠 Go to Dashboard
+    </a>
+  </div>
+
+  <!-- Page Header + Assign Competence Button on same line -->
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
       <h2 class="fw-bold">Visit Day: {{ visit_day.date }}</h2>
-      <h5 class="text-muted">Mentor: {{ visit_day.visit.mentor.get_full_name|default:visit_day.visit.mentor.username }}</h5>
+      <h5 class="text-muted">Mentor: {{ visit_day.visit.mentor.get_full_name|default:visit_day.visit.mentor.username }}
+      </h5>
     </div>
+
+    <!-- Assign Competence Button -->
     {% if is_mentor %}
-      <a href="{% url 'mentorship:assign-competence' visit_day.id %}" class="btn btn-primary shadow-sm">
-        ➕ Assign Competence
-      </a>
+    <a href="{% url 'mentorship:assign-competence' visit_day.id %}" class="btn btn-success shadow-sm">
+      ➕ Assign Competence
+    </a>
     {% endif %}
   </div>
 
-  <!-- Section Header -->
-  <div class="mb-4">
-    <h3 class="border-bottom pb-2 fw-semibold">📋 Competence Assignments</h3>
-  </div>
+  <!-- Competence Assignments -->
+  <h3 class="border-bottom pb-2 fw-semibold mb-4">📋 Competence Assignments</h3>
 
   {% for mentee, assignments in mentee_assignments.items %}
   <div class="mb-5 p-3 border rounded shadow-sm bg-white">
@@ -31,49 +45,44 @@
       {% for assignment in assignments %}
       <li class="mb-3 p-2 border-bottom">
         <p><strong>Patient ID (PID):</strong> {{ assignment.pid|default:"Not provided" }}</p>
-        <p>
-          <strong>Competence:</strong> {{ assignment.competence.name }}
-          {% if assignment.competence.description %} - {{ assignment.competence.description }}{% endif %}
-        </p>
+        <p><strong>Competence:</strong> {{ assignment.competence.name }}{% if assignment.competence.description %} - {{
+          assignment.competence.description }}{% endif %}</p>
 
         {% if assignment.mentor_description %}
         <p><strong>Mentor Guidance:</strong> {{ assignment.mentor_description }}</p>
         {% endif %}
 
-        <p>
-          <strong>Status:</strong>
+        <p><strong>Status:</strong>
           {% if assignment.status == 'pending' %}
-            <span class="badge bg-secondary">Pending</span>
+          <span class="badge bg-secondary">Pending</span>
           {% elif assignment.status == 'assigned' %}
-            <span class="badge bg-info">Assigned</span>
+          <span class="badge bg-info">Assigned</span>
           {% elif assignment.status == 'completed' %}
-            <span class="badge bg-success">Self-Assessed</span>
+          <span class="badge bg-success">Self-Assessed</span>
           {% elif assignment.status == 'reviewed' %}
-            <span class="badge bg-primary">Reviewed</span>
+          <span class="badge bg-primary">Reviewed</span>
           {% endif %}
         </p>
 
-        <p>
-          <strong>Mentee Grade:</strong>
+        <p><strong>Mentee Grade:</strong>
           {% if assignment.mentee_grade %}
-            {{ assignment.mentee_grade.score }} - {{ assignment.mentee_grade.label }}
+          {{ assignment.mentee_grade.score }} - {{ assignment.mentee_grade.label }}
           {% else %}
-            <span class="text-muted">Not yet assessed</span>
+          <span class="text-muted">Not yet assessed</span>
           {% endif %}
         </p>
 
-        <p>
-          <strong>Mentor Grade:</strong>
+        <p><strong>Mentor Grade:</strong>
           {% if assignment.mentor_grade %}
-            {{ assignment.mentor_grade.score }} - {{ assignment.mentor_grade.label }}
+          {{ assignment.mentor_grade.score }} - {{ assignment.mentor_grade.label }}
           {% else %}
-            {% if is_mentor %}
-              <a href="{% url 'mentorship:mentor-grade' assignment.id %}" class="btn btn-outline-primary btn-sm">
-                Enter Grade
-              </a>
-            {% else %}
-              <span class="text-muted">Awaiting mentor grading</span>
-            {% endif %}
+          {% if is_mentor %}
+          <a href="{% url 'mentorship:mentor-grade' assignment.id %}" class="btn btn-outline-primary btn-sm">
+            Enter Grade
+          </a>
+          {% else %}
+          <span class="text-muted">Awaiting mentor grading</span>
+          {% endif %}
           {% endif %}
         </p>
 
@@ -81,9 +90,9 @@
         <p><strong>Mentor Remarks:</strong> {{ assignment.mentor_remarks|default:"No remarks" }}</p>
 
         {% if not is_mentor and request.user == mentee and assignment.status in 'assigned,pending' %}
-          <a href="{% url 'mentorship:mentee-self-assess' assignment.id %}" class="btn btn-success btn-sm mt-2">
-            ✏️ Self-Assess
-          </a>
+        <a href="{% url 'mentorship:mentee-self-assess' assignment.id %}" class="btn btn-success btn-sm mt-2">
+          ✏️ Self-Assess
+        </a>
         {% endif %}
       </li>
       {% endfor %}
@@ -91,24 +100,32 @@
 
     <!-- Mentor Summary Section -->
     {% if is_mentor %}
-      {% for m, form in mentee_summary_forms %}
-        {% if m == mentee %}
-        <div class="mt-4 p-3 border rounded bg-light">
-          <h6 class="fw-bold text-dark border-bottom pb-2">📝 Mentor Summary for {{ mentee.get_full_name|default:mentee.username }}</h6>
-          <form class="mentor-summary-form" data-mentee-id="{{ mentee.id }}" method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="btn btn-primary mt-2">💾 Save Summary</button>
-            <span class="summary-feedback text-success ms-2" style="display:none;">✅ Saved!</span>
-          </form>
+    {% for m, form in mentee_summary_forms %}
+    {% if m == mentee %}
+    <div class="mt-4 p-3 border rounded bg-light">
+      <h6 class="fw-bold text-dark border-bottom pb-2">📝 Mentor Summary for {{
+        mentee.get_full_name|default:mentee.username }}</h6>
+      <form class="mentor-summary-form" data-mentee-id="{{ mentee.id }}" method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <!-- Bottom Buttons inside form -->
+        <div class="d-flex justify-content-between mt-2">
+          <a href="{% url 'mentorship:visit-day-detail' visit_day.id %}" class="btn btn-outline-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary">💾 Save Summary</button>
         </div>
-        {% endif %}
-      {% endfor %}
+        <span class="summary-feedback text-success ms-2" style="display:none;">✅ Saved!</span>
+      </form>
+    </div>
+    {% endif %}
+    {% endfor %}
     {% endif %}
   </div>
   {% endfor %}
 
-  <a href="{% url 'mentorship:visit-detail' visit_day.visit.id %}" class="btn btn-secondary">🔙 Back to Visit</a>
+  <!-- Bottom Back Button -->
+  <div class="d-flex justify-content-start mt-4">
+    <a href="{% url 'mentorship:visit-detail' visit_day.visit.id %}" class="btn btn-secondary">🔙 Back to Visit</a>
+  </div>
 </div>
 {% endblock %}
 

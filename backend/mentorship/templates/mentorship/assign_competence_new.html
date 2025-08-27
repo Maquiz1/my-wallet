@@ -4,7 +4,22 @@
 
 {% block content %}
 
+<div class="container">
+
 <h2 class="mb-4">Assign Competence for {{ visit_day.date }}</h2>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <!-- Top Left Back to Visit Day -->
+    <a href="{% url 'mentorship:visit-day-detail' visit_day.id %}" class="btn btn-outline-secondary">
+        ⬅ Back to Visit Day
+    </a>
+
+    <!-- Top Right Back to Dashboard -->
+    <a href="{% url 'dashboard:dashboard' %}" class="btn btn-outline-primary">
+        🏠 Dashboard
+    </a>
+</div>
+
 
 <!-- Assignment Form -->
 {% if is_mentor %}
@@ -14,25 +29,31 @@
       {% csrf_token %}
       {{ form.non_field_errors }}
 
-      {% for field in form %}
-        <div class="mb-3">
-          <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-          {{ field }}
-          {% if field.help_text %}
-            <div class="form-text">{{ field.help_text }}</div>
-          {% endif %}
-          {% for error in field.errors %}
-            <div class="invalid-feedback d-block">
-              {{ error }}
-            </div>
-          {% endfor %}
+      <div class="row g-3">
+        <div class="col-md-4">
+          {{ form.mentee.label_tag }}
+          {{ form.mentee }}
         </div>
-      {% endfor %}
-
-      <div class="mt-4">
-        <button type="submit" class="btn btn-success me-2">Assign</button>
-        <a href="{% url 'mentorship:visit-day-detail' visit_day.id %}" class="btn btn-outline-secondary">Back to Visit Day</a>
+        <div class="col-md-4">
+          {{ form.disease.label_tag }}
+          {{ form.disease }}
+        </div>
+        <div class="col-md-4">
+          {{ form.competence.label_tag }}
+          {{ form.competence }}
+        </div>
+        <div class="col-12">
+          {{ form.mentor_description.label_tag }}
+          {{ form.mentor_description }}
+        </div>
       </div>
+
+      <!-- Bottom Buttons -->
+      <div class="d-flex justify-content-between mt-4">
+        <a href="{% url 'mentorship:visit-day-detail' visit_day.id %}" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-success">Assign</button>
+      </div>
+
     </form>
   </div>
 </div>
@@ -47,6 +68,7 @@
     <thead class="table-dark">
       <tr>
         <th>Mentee</th>
+        <th>Disease</th>
         <th>Competence</th>
         <th>Status</th>
         <th>Assigned By</th>
@@ -57,6 +79,7 @@
       {% for assignment in assignments %}
         <tr>
           <td>{{ assignment.mentee.get_full_name|default:assignment.mentee.username }}</td>
+          <td>{{ assignment.disease.name }}</td>
           <td>
             {{ assignment.competence.name }}{% if assignment.competence.description %} - {{ assignment.competence.description }}{% endif %}
           </td>
@@ -97,34 +120,34 @@
 <p class="text-muted">No assignments yet.</p>
 {% endif %}
 
+</div> {# end container #}
+
 {% endblock %}
-
-
 
 {% block extra_scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const diseaseSelect = document.getElementById('id_disease');
-    const competenceSelect = document.getElementById('id_competence');
+// document.addEventListener('DOMContentLoaded', function() {
+//     const diseaseSelect = document.getElementById('id_disease');
+//     const competenceSelect = document.getElementById('id_competence');
 
-    if (diseaseSelect) {
-        diseaseSelect.addEventListener('change', function() {
-            const diseaseId = this.value;
-            fetch(`/mentorship/competence-by-disease/?disease_id=${diseaseId}`)
-                .then(response => response.json())
-                .then(data => {
-                    competenceSelect.innerHTML = '<option value="">---------</option>';
-                    data.forEach(item => {
-                        const option = document.createElement('option');
-                        option.value = item.id;
-                        option.textContent = item.name + (item.description ? ' - ' + item.description : '');
-                        competenceSelect.appendChild(option);
-                    });
-                })
-                .catch(error => console.error('Error fetching competences:', error));
-        });
-    }
-});
+//     if (diseaseSelect) {
+//         diseaseSelect.addEventListener('change', function() {
+//             const diseaseId = this.value;
+//             fetch(`/mentorship/competence-by-disease/?disease_id=${diseaseId}`)
+//                 .then(response => response.json())
+//                 .then(data => {
+//                     competenceSelect.innerHTML = '<option value="">---------</option>';
+//                     data.forEach(item => {
+//                         const option = document.createElement('option');
+//                         option.value = item.id;
+//                         option.textContent = item.name + (item.description ? ' - ' + item.description : '');
+//                         competenceSelect.appendChild(option);
+//                     });
+//                 })
+//                 .catch(error => console.error('Error fetching competences:', error));
+//         });
+//     }
+// });
 
 </script>
 {% endblock %}

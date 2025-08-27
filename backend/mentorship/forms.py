@@ -1,5 +1,5 @@
 from django import forms
-from .models import VisitDay, Visit, AssignedCompetence, MenteeGrade, MentorGrade
+from .models import VisitDay, Visit, AssignedCompetence, MenteeGrade, MentorGrade, Competence
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 
@@ -111,6 +111,7 @@ class MenteeSelfAssessmentForm(forms.ModelForm):
 # -------------------------
 # Competence Assignment Form
 # -------------------------
+
 class AssignedCompetenceForm(forms.ModelForm):
     class Meta:
         model = AssignedCompetence
@@ -128,20 +129,70 @@ class AssignedCompetenceForm(forms.ModelForm):
         visit_day = kwargs.pop('visit_day', None)
         super().__init__(*args, **kwargs)
 
+        # Attach visit_day if provided
+        if visit_day:
+            self.fields['visit_day'].initial = visit_day
+            self.instance.visit_day = visit_day  # ✅ ensures instance has visit_day
+
+        # Disable fields for non-mentors
         if user and not user.groups.filter(name='Mentor').exists() and not user.is_superuser:
             for field in self.fields:
                 self.fields[field].disabled = True
 
-        if visit_day:
-            self.fields['visit_day'].initial = visit_day
-
+        # Filter mentees
         self.fields['mentee'].queryset = User.objects.filter(groups__name='Mentee')
+
+        # Customize competence label
         self.fields['competence'].label_from_instance = lambda obj: f"{obj.name} - {obj.description}" if obj.description else obj.name
 
-        if self.instance.pk and self.instance.is_self_assessed():
+        # Filter competence by disease dynamically
+        if 'disease' in self.data:
+            try:
+                disease_id = int(self.data.get('disease'))
+                self.fields['competence'].queryset = Competence.objects.filter(disease_id=disease_id)
+            except (ValueError, TypeError):
+                self.fields['competence'].queryset = Competence.objects.none()
+        elif self.instance.pk and self.instance.disease:
+            self.fields['competence'].queryset = Competence.objects.filter(disease=self.instance.disease)
+        else:
+            self.fields['competence'].queryset = Competence.objects.none()
+
+        # Disable editing of certain fields if self-assessed
+        if self.instance.pk and getattr(self.instance, 'visit_day', None) and self.instance.is_self_assessed():
             for field_name in ['mentee', 'disease', 'competence']:
                 self.fields[field_name].disabled = True
 
+
+# class AssignedCompetenceForm(forms.ModelForm):
+#     class Meta:
+#         model = AssignedCompetence
+#         fields = ['visit_day', 'mentee', 'disease', 'competence', 'mentor_description']
+#         widgets = {
+#             'visit_day': forms.HiddenInput(),
+#             'mentee': forms.Select(attrs={'class': 'form-select'}),
+#             'disease': forms.Select(attrs={'class': 'form-select'}),
+#             'competence': forms.Select(attrs={'class': 'form-select'}),
+#             'mentor_description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Description by mentor'}),
+#         }
+
+#     def __init__(self, *args, **kwargs):
+#         user = kwargs.pop('user', None)
+#         visit_day = kwargs.pop('visit_day', None)
+#         super().__init__(*args, **kwargs)
+
+#         if user and not user.groups.filter(name='Mentor').exists() and not user.is_superuser:
+#             for field in self.fields:
+#                 self.fields[field].disabled = True
+
+#         if visit_day:
+#             self.fields['visit_day'].initial = visit_day
+
+#         self.fields['mentee'].queryset = User.objects.filter(groups__name='Mentee')
+#         self.fields['competence'].label_from_instance = lambda obj: f"{obj.name} - {obj.description}" if obj.description else obj.name
+
+#         if self.instance.pk and self.instance.is_self_assessed():
+#             for field_name in ['mentee', 'disease', 'competence']:
+#                 self.fields[field_name].disabled = True
 
 # -------------------------
 # VisitDay Summary Form
