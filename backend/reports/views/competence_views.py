@@ -24,42 +24,59 @@ class CompetenceReportView(View):
 
     def get(self, request, *args, **kwargs):
         disease_id = request.GET.get("disease")
-        grade_type = request.GET.get("grade", "all")  # all / mentor / mentee
+        grade_type = request.GET.get("grade", "all")  # default all
 
-        qs = AssignedCompetence.objects.select_related('mentor_grade', 'mentee_grade').all()
+        qs = AssignedCompetence.objects.all()
         if disease_id:
             qs = qs.filter(competence__disease_id=disease_id)
 
-        # Average grades per disease
-        avg_grade_per_disease = qs.values("competence__disease__name").annotate(
-            avg_mentor_grade=Avg("mentor_grade__score"),
-            avg_mentee_grade=Avg("mentee_grade__score")
-        ).order_by("competence__disease__name")
+        # Table data
+        if grade_type == "mentor":
+            avg_grade_per_disease = qs.values("competence__disease__name").annotate(
+                avg_mentor_grade=Avg("mentor_grade__score")
+            )
+        elif grade_type == "mentee":
+            avg_grade_per_disease = qs.values("competence__disease__name").annotate(
+                avg_mentee_grade=Avg("mentee_grade__score")
+            )
+        else:  # all
+            avg_grade_per_disease = qs.values("competence__disease__name").annotate(
+                avg_mentor_grade=Avg("mentor_grade__score"),
+                avg_mentee_grade=Avg("mentee_grade__score")
+            )
 
-        # Get all possible grade labels and scores
-        mentor_grades = MentorGrade.objects.all()
-        mentee_grades = MenteeGrade.objects.all()
+        # Prepare chart data
+        def get_grade_labels_and_data(grade_field):
+            labels = list(qs.values_list(f"{grade_field}__label", flat=True).distinct())
+            data = [qs.filter(**{f"{grade_field}__label": lbl}).count() for lbl in labels]
+            return labels, data
 
-        # Distribution counts
-        mentor_distribution = [qs.filter(mentor_grade=g).count() for g in mentor_grades]
-        mentee_distribution = [qs.filter(mentee_grade=g).count() for g in mentee_grades]
+        overall_labels, overall_data = get_grade_labels_and_data("mentor_grade")
+        mentor_labels, mentor_data = get_grade_labels_and_data("mentor_grade")
+        mentee_labels, mentee_data = get_grade_labels_and_data("mentee_grade")
+
+        data = {
+            "avg_grade_per_disease": list(avg_grade_per_disease),
+            "disease_name": Disease.objects.filter(id=disease_id).first().name if disease_id else "All Diseases",
+            "overall_grade_labels": overall_labels,
+            "overall_grade_data": overall_data,
+            "mentor_grade_labels": mentor_labels,
+            "mentor_grade_data": mentor_data,
+            "mentee_grade_labels": mentee_labels,
+            "mentee_grade_data": mentee_data,
+        }
+
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse(data)
 
         context = {
             "avg_grade_per_disease": list(avg_grade_per_disease),
-            "diseases": list(Disease.objects.values("id", "name")),
+            "diseases": Disease.objects.all(),
             "selected_disease": int(disease_id) if disease_id else None,
             "selected_grade": grade_type,
-            "mentor_grade_labels": [g.label for g in mentor_grades],
-            "mentor_grade_data": mentor_distribution,
-            "mentee_grade_labels": [g.label for g in mentee_grades],
-            "mentee_grade_data": mentee_distribution,
         }
-
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse(context, safe=False)
-
         return render(request, self.template_name, context)
-
+    
 # ----- Export Excel CBV -----
 class CompetenceExportExcelView(View):
     def get(self, request, *args, **kwargs):
