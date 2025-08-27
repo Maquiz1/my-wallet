@@ -118,6 +118,13 @@ class VisitDeleteView(LoginRequiredMixin, AdminCheckMixin, DeleteView):
     model = Visit
     template_name = 'mentorship/visit_confirm_delete.html'
 
+    def dispatch(self, request, *args, **kwargs):
+        visit = self.get_object()
+        if visit.status in ['in_progress', 'completed', 'reviewed']:
+            messages.error(request, "This visit cannot be deleted once it is in progress, completed, or reviewed.")
+            return redirect('mentorship:visit-detail', pk=visit.pk)
+        return super().dispatch(request, *args, **kwargs)
+
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, "Visit deleted successfully.")
         return super().delete(request, *args, **kwargs)

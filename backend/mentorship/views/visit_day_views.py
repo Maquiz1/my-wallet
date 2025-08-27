@@ -153,15 +153,22 @@ class VisitDayDeleteView(LoginRequiredMixin, AdminCheckMixin, DeleteView):
 
     def dispatch(self, request, *args, **kwargs):
         obj = self.get_object()
+
+        # Rule 1: Cannot delete if parent Visit is locked
+        if obj.visit.status in ['in_progress', 'completed', 'reviewed']:
+            messages.error(request, "Cannot delete this Visit Day because the parent Visit is in progress, completed, or reviewed.")
+            return redirect('mentorship:visit-detail', pk=obj.visit.pk)
+
+        # Rule 2: Cannot delete if VisitDay has assignments
         if obj.assignments.exists():
             messages.error(request, "Cannot delete this Visit Day as it has assigned competencies.")
             return redirect('mentorship:visit-detail', pk=obj.visit.pk)
+
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
         messages.success(self.request, "Visit Day deleted successfully.")
         return reverse_lazy('mentorship:visit-detail', kwargs={'pk': self.object.visit.pk})
-    
 
 class VisitDaySummaryUpdateView(UpdateView):
     model = VisitDay
