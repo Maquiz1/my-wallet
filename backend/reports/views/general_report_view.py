@@ -38,7 +38,7 @@ class GeneralReportView(View):
     template_name = "reports/general_report.html"
 
     def get(self, request, *args, **kwargs):
-        # Filters
+        # ---- Filters ----
         disease_id = request.GET.get("disease", "all")
         user_filter = request.GET.get("user_filter", "all")
         site_id = request.GET.get("site", "all")
@@ -49,6 +49,7 @@ class GeneralReportView(View):
         comp_qs = AssignedCompetence.objects.all()
         if disease_id != "all":
             comp_qs = comp_qs.filter(competence__disease_id=disease_id)
+
         if user_filter == "mentor":
             comp_per_disease = comp_qs.values("competence__disease__name").annotate(avg_grade=Avg("mentor_grade"))
         elif user_filter == "mentee":
@@ -96,10 +97,11 @@ class GeneralReportView(View):
         if mentee_id != "all":
             top_comp_qs = top_comp_qs.filter(mentee_id=mentee_id)
 
-        top_competences = list(top_comp_qs.values(
+        top_competences = top_comp_qs.values(
             "competence__name", "competence__disease__name"
-        ).annotate(total_assigned=Count("id")).order_by("-total_assigned")[:5])
+        ).annotate(total_assigned=Count("id")).order_by("-total_assigned")[:5]
 
+        # ---- Context ----
         context = {
             "competence_per_disease": comp_per_disease,
             "users_data": users_data,
@@ -111,13 +113,16 @@ class GeneralReportView(View):
             "mentors": User.objects.filter(groups__name="Mentor"),
             "mentees": User.objects.filter(groups__name="Mentee"),
             "sites": Site.objects.all(),
-            "selected_disease": int(disease_id) if disease_id != "all" else "all",
+            "selected_disease": int(disease_id) if disease_id != "all" else None,
             "user_filter": user_filter,
+            "selected_site": int(site_id) if site_id != "all" else None,
+            "selected_mentor": int(mentor_id) if mentor_id != "all" else None,
+            "selected_mentee": int(mentee_id) if mentee_id != "all" else None,
         }
 
+        # ---- AJAX Handling ----
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            # Only return top_competences for AJAX
-            return JsonResponse({"top_competences": top_competences})
+            return JsonResponse({"top_competences": list(top_competences)})
 
         return render(request, self.template_name, context)
 
