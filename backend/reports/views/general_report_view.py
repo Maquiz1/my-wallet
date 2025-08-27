@@ -98,7 +98,7 @@ class GeneralReportView(View):
             top_comp_qs = top_comp_qs.filter(mentee_id=mentee_id)
 
         top_competences = top_comp_qs.values(
-            "competence__name", "competence__disease__name"
+            "competence__name", "competence__disease__name","competence__description"
         ).annotate(total_assigned=Count("id")).order_by("-total_assigned")[:5]
 
         # ---- Context ----
