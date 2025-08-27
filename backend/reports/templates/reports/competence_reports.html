@@ -102,7 +102,10 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Helper to create chart with % in tooltip
+    const COLORS_OVERALL = ['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd'];
+    const COLORS_MENTOR = ['#17becf','#bcbd22','#e377c2','#8c564b','#7f7f7f'];
+    const COLORS_MENTEE = ['#ff9896','#c5b0d5','#c49c94','#f7b6d2','#dbdb8d'];
+
     function createChart(ctx, type, labels=[], values=[], bgColors=[]) {
         return new Chart(ctx, {
             type: type,
@@ -124,7 +127,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Chart objects
     const charts = {
         overallPie: createChart(document.getElementById('overallPieChart').getContext('2d'),'pie'),
         mentorPie: createChart(document.getElementById('mentorPieChart').getContext('2d'),'pie'),
@@ -147,7 +149,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const showMentor = grade==='all'||grade==='mentor';
             const showMentee = grade==='all'||grade==='mentee';
 
-            // Hide/Show columns
+            // Hide/Show table columns
             document.querySelectorAll('#competenceTable th.overall-col, #competenceTable td.overall-col').forEach(el=>el.style.display=showOverall?'':'none');
             document.querySelectorAll('#competenceTable th.mentor-col, #competenceTable td.mentor-col').forEach(el=>el.style.display=showMentor?'':'none');
             document.querySelectorAll('#competenceTable th.mentee-col, #competenceTable td.mentee-col').forEach(el=>el.style.display=showMentee?'':'none');
@@ -180,59 +182,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 </tr>`;
             }
 
-            // Update chart titles
-            const diseaseText = disease?data.disease_name:data.disease_name || "All Diseases";
-            if(showOverall){
-                charts.overallPie.data.labels = data.overall_grade_labels;
-                charts.overallPie.data.datasets[0].data = data.overall_grade_data;
-                charts.overallPie.update();
-                charts.overallDoughnut.data.labels = data.overall_grade_labels;
-                charts.overallDoughnut.data.datasets[0].data = data.overall_grade_data;
-                charts.overallDoughnut.update();
-                document.getElementById('overallPieTitle').textContent=`Overall Grades (${diseaseText})`;
-                document.getElementById('overallDoughnutTitle').textContent=`Overall Grades (${diseaseText})`;
-                document.getElementById('overallPieContainer').style.display='';
-                document.getElementById('overallDoughnutContainer').style.display='';
-            } else {
-                document.getElementById('overallPieContainer').style.display='none';
-                document.getElementById('overallDoughnutContainer').style.display='none';
+            const diseaseText = data.disease_name || "All Diseases";
+
+            // Update chart data and visibility
+            function updateChart(chartObj, labels, values, colors, titleId, containerId, show){
+                if(show){
+                    chartObj.data.labels = labels;
+                    chartObj.data.datasets[0].data = values;
+                    chartObj.data.datasets[0].backgroundColor = colors;
+                    chartObj.update();
+                    document.getElementById(titleId).textContent = `${document.getElementById(titleId).textContent.split('(')[0]} (${diseaseText})`;
+                    document.getElementById(containerId).style.display='';
+                } else {
+                    document.getElementById(containerId).style.display='none';
+                }
             }
 
-            if(showMentor){
-                charts.mentorPie.data.labels = data.mentor_grade_labels;
-                charts.mentorPie.data.datasets[0].data = data.mentor_grade_data;
-                charts.mentorPie.update();
-                charts.mentorDoughnut.data.labels = data.mentor_grade_labels;
-                charts.mentorDoughnut.data.datasets[0].data = data.mentor_grade_data;
-                charts.mentorDoughnut.update();
-                document.getElementById('mentorPieTitle').textContent=`Mentor Grades (${diseaseText})`;
-                document.getElementById('mentorDoughnutTitle').textContent=`Mentor Grades (${diseaseText})`;
-                document.getElementById('mentorPieContainer').style.display='';
-                document.getElementById('mentorDoughnutContainer').style.display='';
-            } else {
-                document.getElementById('mentorPieContainer').style.display='none';
-                document.getElementById('mentorDoughnutContainer').style.display='none';
-            }
+            updateChart(charts.overallPie, data.overall_grade_labels, data.overall_grade_data, COLORS_OVERALL,'overallPieTitle','overallPieContainer',showOverall);
+            updateChart(charts.mentorPie, data.mentor_grade_labels, data.mentor_grade_data, COLORS_MENTOR,'mentorPieTitle','mentorPieContainer',showMentor);
+            updateChart(charts.menteePie, data.mentee_grade_labels, data.mentee_grade_data, COLORS_MENTEE,'menteePieTitle','menteePieContainer',showMentee);
 
-            if(showMentee){
-                charts.menteePie.data.labels = data.mentee_grade_labels;
-                charts.menteePie.data.datasets[0].data = data.mentee_grade_data;
-                charts.menteePie.update();
-                charts.menteeDoughnut.data.labels = data.mentee_grade_labels;
-                charts.menteeDoughnut.data.datasets[0].data = data.mentee_grade_data;
-                charts.menteeDoughnut.update();
-                document.getElementById('menteePieTitle').textContent=`Mentee Grades (${diseaseText})`;
-                document.getElementById('menteeDoughnutTitle').textContent=`Mentee Grades (${diseaseText})`;
-                document.getElementById('menteePieContainer').style.display='';
-                document.getElementById('menteeDoughnutContainer').style.display='';
-            } else {
-                document.getElementById('menteePieContainer').style.display='none';
-                document.getElementById('menteeDoughnutContainer').style.display='none';
-            }
+            updateChart(charts.overallDoughnut, data.overall_grade_labels, data.overall_grade_data, COLORS_OVERALL,'overallDoughnutTitle','overallDoughnutContainer',showOverall);
+            updateChart(charts.mentorDoughnut, data.mentor_grade_labels, data.mentor_grade_data, COLORS_MENTOR,'mentorDoughnutTitle','mentorDoughnutContainer',showMentor);
+            updateChart(charts.menteeDoughnut, data.mentee_grade_labels, data.mentee_grade_data, COLORS_MENTEE,'menteeDoughnutTitle','menteeDoughnutContainer',showMentee);
         });
     }
 
-    // Trigger fetch on change
     document.getElementById('disease').addEventListener('change', fetchData);
     document.getElementById('grade').addEventListener('change', fetchData);
 
