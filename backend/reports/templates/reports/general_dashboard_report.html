@@ -12,7 +12,7 @@
     <select id="diseaseSelect" class="form-control">
       <option value="all">All</option>
       {% for disease in diseases %}
-        <option value="{{ disease.id }}" {% if selected_disease == disease.id %}selected{% endif %}>
+        <option value="{{ disease.id }}" {% if selected_disease|stringformat:"s" == disease.id|stringformat:"s" %}selected{% endif %}>
           {{ disease.name }}
         </option>
       {% endfor %}
@@ -22,8 +22,8 @@
     <label>User Filter</label>
     <select id="userFilter" class="form-control">
       <option value="all" {% if user_filter == "all" %}selected{% endif %}>All</option>
-      <option value="mentors" {% if user_filter == "mentors" %}selected{% endif %}>Mentors</option>
-      <option value="mentees" {% if user_filter == "mentees" %}selected{% endif %}>Mentees</option>
+      <option value="mentor" {% if user_filter == "mentor" %}selected{% endif %}>Mentors</option>
+      <option value="mentee" {% if user_filter == "mentee" %}selected{% endif %}>Mentees</option>
     </select>
   </div>
   <div class="col-md-2 align-self-end">
@@ -32,47 +32,14 @@
 </form>
 
 <div class="row">
+  {% for chart in charts %}
   <div class="col-md-6 mb-4">
     <div class="card p-3 shadow-sm">
-      <h5 class="card-title">Visits per Site</h5>
-      <canvas id="visitsChart"></canvas>
+      <h5 class="card-title">{{ chart.title }}</h5>
+      <canvas id="{{ chart.id }}"></canvas>
     </div>
   </div>
-
-  <div class="col-md-6 mb-4">
-    <div class="card p-3 shadow-sm">
-      <h5 class="card-title">Mentorship Progress Over Time</h5>
-      <canvas id="progressChart"></canvas>
-    </div>
-  </div>
-
-  <div class="col-md-6 mb-4">
-    <div class="card p-3 shadow-sm">
-      <h5 class="card-title">Competence Completion Status</h5>
-      <canvas id="statusChart"></canvas>
-    </div>
-  </div>
-
-  <div class="col-md-6 mb-4">
-    <div class="card p-3 shadow-sm">
-      <h5 class="card-title">Competence per Visit</h5>
-      <canvas id="compVisitChart"></canvas>
-    </div>
-  </div>
-
-  <div class="col-md-6 mb-4">
-    <div class="card p-3 shadow-sm">
-      <h5 class="card-title">Competence per Disease</h5>
-      <canvas id="compDiseaseChart"></canvas>
-    </div>
-  </div>
-
-  <div class="col-md-6 mb-4">
-    <div class="card p-3 shadow-sm">
-      <h5 class="card-title">Competence per Mentee</h5>
-      <canvas id="compMenteeChart"></canvas>
-    </div>
-  </div>
+  {% endfor %}
 </div>
 {% endblock %}
 
@@ -82,7 +49,16 @@
 function createChart(ctxId, type, labels, data, color) {
   return new Chart(document.getElementById(ctxId).getContext('2d'), {
     type: type,
-    data: { labels: labels, datasets: [{ label: ctxId.replace(/Chart$/, ''), data: data, backgroundColor: color || 'rgba(54, 162, 235, 0.6)', borderColor: color || 'rgba(54, 162, 235, 1)', fill: type === 'line' ? false : true }] },
+    data: { 
+      labels: labels, 
+      datasets: [{ 
+        label: ctxId.replace(/Chart$/, ''), 
+        data: data, 
+        backgroundColor: color || 'rgba(54, 162, 235, 0.6)', 
+        borderColor: color || 'rgba(54, 162, 235, 1)', 
+        fill: type === 'line' ? false : true 
+      }] 
+    },
     options: { responsive: true }
   });
 }
@@ -108,13 +84,13 @@ document.getElementById('filterForm').addEventListener('submit', function(e) {
   })
   .then(res => res.json())
   .then(data => {
-    for (const [key, chart] of Object.entries(charts)) {
+    Object.entries(charts).forEach(([key, chart]) => {
       const labelsKey = key.replace('Chart','_labels');
       const dataKey = key.replace('Chart','_data');
       chart.data.labels = data[labelsKey];
       chart.data.datasets[0].data = data[dataKey];
       chart.update();
-    }
+    });
   });
 });
 </script>

@@ -8,14 +8,29 @@ class GeneralDashboardReportView(View):
     template_name = "reports/general_dashboard_report.html"
 
     def get(self, request, *args, **kwargs):
-        disease_id = request.GET.get("disease")
+        # Filters
+        disease_id = request.GET.get("disease", "all")
         user_filter = request.GET.get("user_filter", "all")
 
+        # Dashboard context from services
         context = get_dashboard_context()
-        context['user_filter'] = user_filter
-        context['selected_disease'] = int(disease_id) if disease_id and disease_id != "all" else None
-        context['diseases'] = Disease.objects.all()
 
+        # Add filters and disease list
+        context['user_filter'] = user_filter
+        context['diseases'] = Disease.objects.all()
+        context['selected_disease'] = int(disease_id) if disease_id != "all" else "all"
+
+        # Define charts for template
+        context['charts'] = [
+            {'id': 'visitsChart', 'title': 'Visits per Site'},
+            {'id': 'progressChart', 'title': 'Mentorship Progress Over Time'},
+            {'id': 'statusChart', 'title': 'Competence Completion Status'},
+            {'id': 'compVisitChart', 'title': 'Competence per Visit'},
+            {'id': 'compDiseaseChart', 'title': 'Competence per Disease'},
+            {'id': 'compMenteeChart', 'title': 'Competence per Mentee'},
+        ]
+
+        # AJAX response for chart updates
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse(context)
 
