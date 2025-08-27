@@ -42,11 +42,11 @@
         </tr>
     </thead>
     <tbody>
-        <!-- JS will fill -->
+        <!-- Filled dynamically -->
     </tbody>
 </table>
 
-<!-- Charts: First Row (Pie) -->
+<!-- Charts: Pie (Row 1) -->
 <div class="row mt-4" id="pieChartsRow">
     <div class="col-md-4 mb-4" id="overallPieContainer">
         <div class="card p-3 shadow-sm">
@@ -68,7 +68,7 @@
     </div>
 </div>
 
-<!-- Charts: Second Row (Doughnut) -->
+<!-- Charts: Doughnut (Row 2) -->
 <div class="row mt-4" id="doughnutChartsRow">
     <div class="col-md-4 mb-4" id="overallDoughnutContainer">
         <div class="card p-3 shadow-sm">
@@ -102,14 +102,36 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Chart contexts
+    // Helper to create chart with % in tooltip
+    function createChart(ctx, type, labels=[], values=[], bgColors=[]) {
+        return new Chart(ctx, {
+            type: type,
+            data: { labels: labels, datasets: [{ data: values, backgroundColor: bgColors }] },
+            options: {
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a,b)=>a+b,0);
+                                const value = context.raw;
+                                const percent = total ? ((value/total)*100).toFixed(1) : 0;
+                                return `${context.label}: ${value} (${percent}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Chart objects
     const charts = {
-        overallPie: new Chart(document.getElementById('overallPieChart').getContext('2d'), { type: 'pie', data: { labels: [], datasets:[{data:[], backgroundColor: ['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd']}] } }),
-        mentorPie: new Chart(document.getElementById('mentorPieChart').getContext('2d'), { type: 'pie', data: { labels: [], datasets:[{data:[], backgroundColor: ['#17a2b8','#6f42c1','#28a745','#ffc107','#fd7e14']}] } }),
-        menteePie: new Chart(document.getElementById('menteePieChart').getContext('2d'), { type: 'pie', data: { labels: [], datasets:[{data:[], backgroundColor: ['#007bff','#6610f2','#20c997','#fd7e14','#e83e8c']}] } }),
-        overallDoughnut: new Chart(document.getElementById('overallDoughnutChart').getContext('2d'), { type: 'doughnut', data: { labels: [], datasets:[{data:[], backgroundColor: ['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd']}] } }),
-        mentorDoughnut: new Chart(document.getElementById('mentorDoughnutChart').getContext('2d'), { type: 'doughnut', data: { labels: [], datasets:[{data:[], backgroundColor: ['#17a2b8','#6f42c1','#28a745','#ffc107','#fd7e14']}] } }),
-        menteeDoughnut: new Chart(document.getElementById('menteeDoughnutChart').getContext('2d'), { type: 'doughnut', data: { labels: [], datasets:[{data:[], backgroundColor: ['#007bff','#6610f2','#20c997','#fd7e14','#e83e8c']}] } }),
+        overallPie: createChart(document.getElementById('overallPieChart').getContext('2d'),'pie'),
+        mentorPie: createChart(document.getElementById('mentorPieChart').getContext('2d'),'pie'),
+        menteePie: createChart(document.getElementById('menteePieChart').getContext('2d'),'pie'),
+        overallDoughnut: createChart(document.getElementById('overallDoughnutChart').getContext('2d'),'doughnut'),
+        mentorDoughnut: createChart(document.getElementById('mentorDoughnutChart').getContext('2d'),'doughnut'),
+        menteeDoughnut: createChart(document.getElementById('menteeDoughnutChart').getContext('2d'),'doughnut')
     };
 
     function fetchData() {
@@ -125,67 +147,96 @@ document.addEventListener('DOMContentLoaded', function() {
             const showMentor = grade==='all'||grade==='mentor';
             const showMentee = grade==='all'||grade==='mentee';
 
-            // Table columns
-            document.querySelectorAll('#competenceTable th.overall-col, #competenceTable td.overall-col').forEach(el => el.style.display=showOverall?'':'none');
-            document.querySelectorAll('#competenceTable th.mentor-col, #competenceTable td.mentor-col').forEach(el => el.style.display=showMentor?'':'none');
-            document.querySelectorAll('#competenceTable th.mentee-col, #competenceTable td.mentee-col').forEach(el => el.style.display=showMentee?'':'none');
+            // Hide/Show columns
+            document.querySelectorAll('#competenceTable th.overall-col, #competenceTable td.overall-col').forEach(el=>el.style.display=showOverall?'':'none');
+            document.querySelectorAll('#competenceTable th.mentor-col, #competenceTable td.mentor-col').forEach(el=>el.style.display=showMentor?'':'none');
+            document.querySelectorAll('#competenceTable th.mentee-col, #competenceTable td.mentee-col').forEach(el=>el.style.display=showMentee?'':'none');
 
-            const countRows = data.avg_grade_per_disease.length;
+            // Fill table
+            const rows = data.avg_grade_per_disease;
             let totalMentor=0, totalMentee=0;
-            if(countRows===0){
+            const count = rows.length;
+            if(count===0){
                 const colspan = 1 + (showOverall?1:0) + (showMentor?1:0) + (showMentee?1:0);
                 tbody.innerHTML = `<tr><td colspan="${colspan}">No data available.</td></tr>`;
             } else {
-                data.avg_grade_per_disease.forEach(item=>{
-                    const overall = item.avg_mentor_grade && item.avg_mentee_grade ? ((item.avg_mentor_grade+item.avg_mentee_grade)/2).toFixed(2) : '-';
-                    tbody.innerHTML+=`<tr>
-                        <td>${item.competence__disease__name}</td>
+                rows.forEach(r=>{
+                    const overall = r.avg_mentor_grade && r.avg_mentee_grade ? ((r.avg_mentor_grade+r.avg_mentee_grade)/2).toFixed(2) : '-';
+                    tbody.innerHTML += `<tr>
+                        <td>${r.competence__disease__name}</td>
                         <td class="overall-col">${showOverall?overall:''}</td>
-                        <td class="mentor-col">${showMentor?(item.avg_mentor_grade?item.avg_mentor_grade.toFixed(2):'-'):''}</td>
-                        <td class="mentee-col">${showMentee?(item.avg_mentee_grade?item.avg_mentee_grade.toFixed(2):'-'):''}</td>
+                        <td class="mentor-col">${showMentor?r.avg_mentor_grade?.toFixed(2):''}</td>
+                        <td class="mentee-col">${showMentee?r.avg_mentee_grade?.toFixed(2):''}</td>
                     </tr>`;
-                    totalMentor+=item.avg_mentor_grade||0;
-                    totalMentee+=item.avg_mentee_grade||0;
+                    totalMentor += r.avg_mentor_grade||0;
+                    totalMentee += r.avg_mentee_grade||0;
                 });
-                const overallTotal = showOverall?((totalMentor+totalMentee)/countRows/2).toFixed(2):'';
-                tbody.innerHTML+=`<tr class="table-secondary fw-bold">
-                    <td>Total / Average</td>
+                const overallTotal = showOverall?((totalMentor+totalMentee)/count/2).toFixed(2):'';
+                tbody.innerHTML += `<tr class="table-secondary fw-bold">
+                    <td>Total / Avg</td>
                     <td class="overall-col">${overallTotal}</td>
-                    <td class="mentor-col">${showMentor?(totalMentor/countRows).toFixed(2):''}</td>
-                    <td class="mentee-col">${showMentee?(totalMentee/countRows).toFixed(2):''}</td>
+                    <td class="mentor-col">${showMentor?(totalMentor/count).toFixed(2):''}</td>
+                    <td class="mentee-col">${showMentee?(totalMentee/count).toFixed(2):''}</td>
                 </tr>`;
             }
 
-            // Update charts
-            charts.overallPie.data.labels = showOverall?data.overall_grade_labels:[];
-            charts.overallPie.data.datasets[0].data = showOverall?data.overall_grade_data:[];
-            charts.overallPie.update();
+            // Update chart titles
+            const diseaseText = disease?data.disease_name:data.disease_name || "All Diseases";
+            if(showOverall){
+                charts.overallPie.data.labels = data.overall_grade_labels;
+                charts.overallPie.data.datasets[0].data = data.overall_grade_data;
+                charts.overallPie.update();
+                charts.overallDoughnut.data.labels = data.overall_grade_labels;
+                charts.overallDoughnut.data.datasets[0].data = data.overall_grade_data;
+                charts.overallDoughnut.update();
+                document.getElementById('overallPieTitle').textContent=`Overall Grades (${diseaseText})`;
+                document.getElementById('overallDoughnutTitle').textContent=`Overall Grades (${diseaseText})`;
+                document.getElementById('overallPieContainer').style.display='';
+                document.getElementById('overallDoughnutContainer').style.display='';
+            } else {
+                document.getElementById('overallPieContainer').style.display='none';
+                document.getElementById('overallDoughnutContainer').style.display='none';
+            }
 
-            charts.mentorPie.data.labels = showMentor?data.mentor_grade_labels:[];
-            charts.mentorPie.data.datasets[0].data = showMentor?data.mentor_grade_data:[];
-            charts.mentorPie.update();
+            if(showMentor){
+                charts.mentorPie.data.labels = data.mentor_grade_labels;
+                charts.mentorPie.data.datasets[0].data = data.mentor_grade_data;
+                charts.mentorPie.update();
+                charts.mentorDoughnut.data.labels = data.mentor_grade_labels;
+                charts.mentorDoughnut.data.datasets[0].data = data.mentor_grade_data;
+                charts.mentorDoughnut.update();
+                document.getElementById('mentorPieTitle').textContent=`Mentor Grades (${diseaseText})`;
+                document.getElementById('mentorDoughnutTitle').textContent=`Mentor Grades (${diseaseText})`;
+                document.getElementById('mentorPieContainer').style.display='';
+                document.getElementById('mentorDoughnutContainer').style.display='';
+            } else {
+                document.getElementById('mentorPieContainer').style.display='none';
+                document.getElementById('mentorDoughnutContainer').style.display='none';
+            }
 
-            charts.menteePie.data.labels = showMentee?data.mentee_grade_labels:[];
-            charts.menteePie.data.datasets[0].data = showMentee?data.mentee_grade_data:[];
-            charts.menteePie.update();
-
-            charts.overallDoughnut.data.labels = showOverall?data.overall_grade_labels:[];
-            charts.overallDoughnut.data.datasets[0].data = showOverall?data.overall_grade_data:[];
-            charts.overallDoughnut.update();
-
-            charts.mentorDoughnut.data.labels = showMentor?data.mentor_grade_labels:[];
-            charts.mentorDoughnut.data.datasets[0].data = showMentor?data.mentor_grade_data:[];
-            charts.mentorDoughnut.update();
-
-            charts.menteeDoughnut.data.labels = showMentee?data.mentee_grade_labels:[];
-            charts.menteeDoughnut.data.datasets[0].data = showMentee?data.mentee_grade_data:[];
-            charts.menteeDoughnut.update();
+            if(showMentee){
+                charts.menteePie.data.labels = data.mentee_grade_labels;
+                charts.menteePie.data.datasets[0].data = data.mentee_grade_data;
+                charts.menteePie.update();
+                charts.menteeDoughnut.data.labels = data.mentee_grade_labels;
+                charts.menteeDoughnut.data.datasets[0].data = data.mentee_grade_data;
+                charts.menteeDoughnut.update();
+                document.getElementById('menteePieTitle').textContent=`Mentee Grades (${diseaseText})`;
+                document.getElementById('menteeDoughnutTitle').textContent=`Mentee Grades (${diseaseText})`;
+                document.getElementById('menteePieContainer').style.display='';
+                document.getElementById('menteeDoughnutContainer').style.display='';
+            } else {
+                document.getElementById('menteePieContainer').style.display='none';
+                document.getElementById('menteeDoughnutContainer').style.display='none';
+            }
         });
     }
 
+    // Trigger fetch on change
     document.getElementById('disease').addEventListener('change', fetchData);
     document.getElementById('grade').addEventListener('change', fetchData);
 
+    // Initial load
     fetchData();
 });
 </script>
