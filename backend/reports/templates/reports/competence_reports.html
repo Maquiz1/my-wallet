@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Competence Reports{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Competence Reports</h2>
+
+<!-- Filter Form -->
+<form method="get" class="mb-4 row g-3">
+    <div class="col-md-4">
+        <label for="disease" class="form-label">Disease</label>
+        <select name="disease" id="disease" class="form-select">
+            <option value="">All Diseases</option>
+            {% for disease in diseases %}
+            <option value="{{ disease.id }}" {% if selected_disease == disease.id %}selected{% endif %}>
+                {{ disease.name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label for="grade" class="form-label">Grade Type</label>
+        <select name="grade" id="grade" class="form-select">
+            <option value="all" {% if selected_grade == 'all' %}selected{% endif %}>All Grades</option>
+            <option value="mentor" {% if selected_grade == 'mentor' %}selected{% endif %}>Mentor Grade</option>
+            <option value="mentee" {% if selected_grade == 'mentee' %}selected{% endif %}>Mentee Grade</option>
+        </select>
+    </div>
+
+    <div class="col-md-4 align-self-end">
+        <button type="submit" class="btn btn-primary">Filter</button>
+    </div>
+</form>
+
+<!-- Report Table -->
+<table class="table table-bordered">
+    <thead class="table-dark">
+        <tr>
+            <th>Disease</th>
+            <th>Average {{ selected_grade|capfirst }} Grade</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in avg_grade_per_disease %}
+        <tr>
+            <td>{{ item.competence__disease__name }}</td>
+            <td>{{ item.avg_grade|default:"-" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="2">No data available.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Export Buttons -->
+<div class="mt-3">
+    <a href="{% url 'reports:competence-export-excel' %}?{% if selected_disease %}disease={{ selected_disease }}&{% endif %}grade={{ selected_grade }}"
+        class="btn btn-success">Export Excel</a>
+    <a href="{% url 'reports:competence-export-pdf' %}?{% if selected_disease %}disease={{ selected_disease }}&{% endif %}grade={{ selected_grade }}"
+        class="btn btn-danger">Export PDF</a>
+</div>
+
+{% endblock %}

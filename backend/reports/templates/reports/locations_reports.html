@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+
+{% block title %}Locations Report{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Locations Report</h2>
+
+    <!-- Filter -->
+    <form method="get" class="row g-3 mb-3">
+        <div class="col-md-3">
+            <label>Country</label>
+            <select name="country" class="form-select">
+                <option value="all" {% if selected_country == None %}selected{% endif %}>All Countries</option>
+                {% for country in countries %}
+                    <option value="{{ country.id }}" {% if selected_country == country.id %}selected{% endif %}>
+                        {{ country.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2 align-self-end">
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </div>
+    </form>
+
+    <!-- Download Buttons -->
+    <div class="mb-4">
+        <a href="{% url 'reports:locations-export-excel' %}?country={{ selected_country|default:'all' }}" class="btn btn-success btn-sm">
+            Export Excel
+        </a>
+        <a href="{% url 'reports:locations-export-pdf' %}?country={{ selected_country|default:'all' }}" class="btn btn-danger btn-sm">
+            Export PDF
+        </a>
+    </div>
+
+    <!-- Charts -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card p-3">
+                <h5>Sites per Country</h5>
+                <canvas id="sitesPerCountryChart"></canvas>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card p-3">
+                <h5>Mentorship Visits per Site</h5>
+                <canvas id="visitsPerSiteChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card">
+        <div class="card-body table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Country</th>
+                        <th>Site</th>
+                        <th>Mentorship Visits</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if visits_per_site %}
+                        {% for row in visits_per_site %}
+                            <tr>
+                                <td>{{ row.site__country__name }}</td>
+                                <td>{{ row.site__name }}</td>
+                                <td>{{ row.total_visits }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="3" class="text-center">No data available.</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const sitesPerCountryLabels = {{ sites_per_country|pluck:"country__name"|safe }};
+    const sitesPerCountryData = {{ sites_per_country|pluck:"total_sites"|safe }};
+
+    const visitsPerSiteLabels = {{ visits_per_site|pluck:"site__name"|safe }};
+    const visitsPerSiteData = {{ visits_per_site|pluck:"total_visits"|safe }};
+
+    const ctx1 = document.getElementById('sitesPerCountryChart').getContext('2d');
+    new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: sitesPerCountryLabels,
+            datasets: [{
+                label: 'Total Sites',
+                data: sitesPerCountryData,
+                backgroundColor: 'rgba(54, 162, 235, 0.6)'
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    const ctx2 = document.getElementById('visitsPerSiteChart').getContext('2d');
+    new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: visitsPerSiteLabels,
+            datasets: [{
+                label: 'Mentorship Visits',
+                data: visitsPerSiteData,
+                backgroundColor: 'rgba(255, 99, 132, 0.6)'
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+</script>
+{% endblock %}

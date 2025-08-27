@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Visits Reports{% endblock %}
+
+{% block content %}
+<h3>📅 Visits Reports</h3>
+
+<!-- Filter Form -->
+<form method="get" class="row mb-3">
+  <div class="col-md-3">
+    <label>Start Date</label>
+    <input type="date" name="start_date" value="{{ start_date }}" class="form-control">
+  </div>
+  <div class="col-md-3">
+    <label>End Date</label>
+    <input type="date" name="end_date" value="{{ end_date }}" class="form-control">
+  </div>
+  <div class="col-md-3">
+    <label>Site</label>
+    <select name="site" class="form-control">
+      <option value="">-- All Sites --</option>
+      {% for s in sites %}
+        <option value="{{ s.id }}" {% if selected_site == s.id %}selected{% endif %}>{{ s.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3 align-self-end">
+    <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+  </div>
+</form>
+
+<!-- Export Buttons -->
+<a href="{% url 'reports:visits-export-excel' %}?start_date={{ start_date }}&end_date={{ end_date }}&site={{ selected_site }}" class="btn btn-success">⬇️ Export Excel</a>
+<a href="{% url 'reports:visits-export-pdf' %}?start_date={{ start_date }}&end_date={{ end_date }}&site={{ selected_site }}" class="btn btn-danger">⬇️ Export PDF</a>
+
+<hr>
+
+<div class="row mt-3">
+  <div class="col-md-6">
+    <div class="card p-3">
+      <h5>Visits per Site</h5>
+      <canvas id="visitsPerSiteChart"></canvas>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card p-3">
+      <h5>Visits Over Time</h5>
+      <canvas id="visitsOverTimeChart"></canvas>
+    </div>
+  </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const visitsPerSiteCtx = document.getElementById('visitsPerSiteChart').getContext('2d');
+new Chart(visitsPerSiteCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ visits_per_site_labels|safe }},
+        datasets: [{
+            label: 'Visits per Site',
+            data: {{ visits_per_site_data|safe }},
+            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+        }]
+    }
+});
+
+const visitsOverTimeCtx = document.getElementById('visitsOverTimeChart').getContext('2d');
+new Chart(visitsOverTimeCtx, {
+    type: 'line',
+    data: {
+        labels: {{ visits_over_time_labels|safe }},
+        datasets: [{
+            label: 'Visits Over Time',
+            data: {{ visits_over_time_data|safe }},
+            borderColor: 'rgba(255, 99, 132, 1)',
+            fill: false
+        }]
+    }
+});
+</script>
+{% endblock %}

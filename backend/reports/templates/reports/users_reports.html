@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Users Report{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Users Report</h2>
+
+    <!-- Download Buttons -->
+    <div class="mb-4">
+        <h5>Download Reports</h5>
+        <div class="btn-group" role="group">
+            <a href="{% url 'reports:users-export-excel' 'mentor' %}" class="btn btn-success btn-sm">Mentors Excel</a>
+            <a href="{% url 'reports:users-export-pdf' 'mentor' %}" class="btn btn-danger btn-sm">Mentors PDF</a>
+            <a href="{% url 'reports:users-export-excel' 'mentee' %}" class="btn btn-success btn-sm">Mentees Excel</a>
+            <a href="{% url 'reports:users-export-pdf' 'mentee' %}" class="btn btn-danger btn-sm">Mentees PDF</a>
+            <a href="{% url 'reports:users-export-excel' 'all' %}" class="btn btn-success btn-sm">All Users Excel</a>
+            <a href="{% url 'reports:users-export-pdf' 'all' %}" class="btn btn-danger btn-sm">All Users PDF</a>
+        </div>
+    </div>
+
+    <!-- Mentors Table -->
+    <div class="card mb-4">
+        <div class="card-header"><h5>Mentors</h5></div>
+        <div class="card-body table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Username</th>
+                        <th>Assigned Competences</th>
+                        <th>Completed Competences</th>
+                        <th>Avg Mentor Grade</th>
+                        <th>Avg Mentee Grade</th>
+                        <th>Visits Conducted</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mentor in mentor_data %}
+                    <tr>
+                        <td>{{ mentor.username }}</td>
+                        <td>{{ mentor.assigned_count }}</td>
+                        <td>{{ mentor.completed_count }}</td>
+                        <td>{{ mentor.avg_mentor_grade }}</td>
+                        <td>{{ mentor.avg_mentee_grade }}</td>
+                        <td>{{ mentor.visits_count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center">No mentors found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Mentees Table -->
+    <div class="card mb-4">
+        <div class="card-header"><h5>Mentees</h5></div>
+        <div class="card-body table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Username</th>
+                        <th>Assigned Competences</th>
+                        <th>Completed Competences</th>
+                        <th>Avg Mentor Grade</th>
+                        <th>Avg Mentee Grade</th>
+                        <th>Visits Attended</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mentee in mentee_data %}
+                    <tr>
+                        <td>{{ mentee.username }}</td>
+                        <td>{{ mentee.assigned_count }}</td>
+                        <td>{{ mentee.completed_count }}</td>
+                        <td>{{ mentee.avg_mentor_grade }}</td>
+                        <td>{{ mentee.avg_mentee_grade }}</td>
+                        <td>{{ mentee.visits_count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center">No mentees found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
