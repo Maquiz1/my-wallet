@@ -14,8 +14,7 @@
             <select id="disease" name="disease" class="form-select">
                 <option value="all" {% if user_filter == "all" %}selected{% endif %}>All</option>
                 {% for disease in diseases %}
-                <option value="{{ disease.id }}" {% if selected_disease == disease.id %}selected{% endif %}>{{
-                    disease.name }}</option>
+                <option value="{{ disease.id }}" {% if selected_disease|stringformat:"s" == disease.id|stringformat:"s" %}selected{% endif %}>{{ disease.name }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -64,6 +63,81 @@
             {% endfor %}
         </tbody>
     </table>
+
+   <!-- Top 5 Competences -->
+<h4>Top 5 Competences</h4>
+<form method="get" class="row g-3 mb-3">
+    <div class="col-md-3">
+        <label>Disease</label>
+        <select name="disease" class="form-select">
+            <option value="all">All</option>
+            {% for disease in diseases %}
+                <option value="{{ disease.id }}" {% if request.GET.disease == disease.id|stringformat:"s" %}selected{% endif %}>
+                    {{ disease.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label>Mentor</label>
+        <select name="mentor" class="form-select">
+            <option value="all">All</option>
+            {% for mentor in mentors %}
+                <option value="{{ mentor.id }}" {% if request.GET.mentor == mentor.id|stringformat:"s" %}selected{% endif %}>
+                    {{ mentor.username }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label>Mentee</label>
+        <select name="mentee" class="form-select">
+            <option value="all">All</option>
+            {% for mentee in mentees %}
+                <option value="{{ mentee.id }}" {% if request.GET.mentee == mentee.id|stringformat:"s" %}selected{% endif %}>
+                    {{ mentee.username }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label>Site</label>
+        <select name="site" class="form-select">
+            <option value="all">All</option>
+            {% for site in sites %}
+                <option value="{{ site.id }}" {% if request.GET.site == site.id|stringformat:"s" %}selected{% endif %}>
+                    {{ site.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3 align-self-end mt-3">
+        <button type="submit" class="btn btn-secondary w-100">Filter Top Competences</button>
+    </div>
+</form>
+
+<table class="table table-striped table-bordered mb-4">
+    <thead class="table-dark">
+        <tr>
+            <th>Competence</th>
+            <th>Disease</th>
+            <th>Total Assigned</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for comp in top_competences %}
+        <tr>
+            <td>{{ comp.competence__name }}</td>
+            <td>{{ comp.competence__disease__name }}</td>
+            <td>{{ comp.total_assigned }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="3">No data</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
 
     <!-- Users Data -->

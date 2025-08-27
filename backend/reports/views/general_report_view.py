@@ -1,5 +1,5 @@
 import io
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.views import View
 from django.shortcuts import render
 from django.db.models import Count, Avg
@@ -25,28 +25,36 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+from django.views import View
+from django.shortcuts import render
+from django.db.models import Count, Avg, Q
+from clinical.models import Disease
+from mentorship.models import AssignedCompetence, Visit
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
 class GeneralReportView(View):
     template_name = "reports/general_report.html"
 
     def get(self, request, *args, **kwargs):
+        # Filters
         disease_id = request.GET.get("disease", "all")
         user_filter = request.GET.get("user_filter", "all")
+        site_id = request.GET.get("site", "all")
+        mentor_id = request.GET.get("mentor", "all")
+        mentee_id = request.GET.get("mentee", "all")
 
-        # ---- Competence Data ----
+        # ---- Competence per Disease ----
         comp_qs = AssignedCompetence.objects.all()
         if disease_id != "all":
             comp_qs = comp_qs.filter(competence__disease_id=disease_id)
-
         if user_filter == "mentor":
-            competence_per_disease = comp_qs.values("competence__disease__name").annotate(
-                avg_grade=Avg("mentor_grade")
-            )
+            comp_per_disease = comp_qs.values("competence__disease__name").annotate(avg_grade=Avg("mentor_grade"))
         elif user_filter == "mentee":
-            competence_per_disease = comp_qs.values("competence__disease__name").annotate(
-                avg_grade=Avg("mentee_grade")
-            )
-        else:  # all → show both
-            competence_per_disease = comp_qs.values("competence__disease__name").annotate(
+            comp_per_disease = comp_qs.values("competence__disease__name").annotate(avg_grade=Avg("mentee_grade"))
+        else:
+            comp_per_disease = comp_qs.values("competence__disease__name").annotate(
                 avg_mentor=Avg("mentor_grade"),
                 avg_mentee=Avg("mentee_grade"),
             )
@@ -72,22 +80,47 @@ class GeneralReportView(View):
         visits_per_site = Visit.objects.values("site__name").annotate(total=Count("id"))
 
         # ---- Sites per Country ----
-        sites_per_country = Site.objects.values("district__region__country__name").annotate(total_sites=Count("id"))
+        sites_per_country = Visit.objects.values("site__district__region__country__name").annotate(total_sites=Count("site"))
 
         # ---- Visits per Location ----
         visits_per_location = Visit.objects.values("site__name").annotate(total_visits=Count("id"))
 
+        # ---- Top 5 Competences ----
+        top_comp_qs = AssignedCompetence.objects.all()
+        if disease_id != "all":
+            top_comp_qs = top_comp_qs.filter(competence__disease_id=disease_id)
+        if site_id != "all":
+            top_comp_qs = top_comp_qs.filter(visit_day__visit__site_id=site_id)
+        if mentor_id != "all":
+            top_comp_qs = top_comp_qs.filter(assigned_by_id=mentor_id)
+        if mentee_id != "all":
+            top_comp_qs = top_comp_qs.filter(mentee_id=mentee_id)
+
+        top_competences = list(top_comp_qs.values(
+            "competence__name", "competence__disease__name"
+        ).annotate(total_assigned=Count("id")).order_by("-total_assigned")[:5])
+
         context = {
-            "competence_per_disease": list(competence_per_disease),
+            "competence_per_disease": comp_per_disease,
             "users_data": users_data,
-            "visits_per_site": list(visits_per_site),
-            "sites_per_country": list(sites_per_country),
-            "visits_per_location": list(visits_per_location),
+            "visits_per_site": visits_per_site,
+            "sites_per_country": sites_per_country,
+            "visits_per_location": visits_per_location,
+            "top_competences": top_competences,
             "diseases": Disease.objects.all(),
-            "selected_disease": disease_id,
+            "mentors": User.objects.filter(groups__name="Mentor"),
+            "mentees": User.objects.filter(groups__name="Mentee"),
+            "sites": Site.objects.all(),
+            "selected_disease": int(disease_id) if disease_id != "all" else "all",
             "user_filter": user_filter,
         }
+
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            # Only return top_competences for AJAX
+            return JsonResponse({"top_competences": top_competences})
+
         return render(request, self.template_name, context)
+
 
 # ----- Dashboard Export Excel -----
 class DashboardExportExcelView(View):
