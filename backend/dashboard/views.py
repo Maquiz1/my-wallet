@@ -4,6 +4,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView,TemplateView
 from datetime import date, timedelta
 from django.db.models import Count
+from django.db.models import Q
+
 
 
 class DashboardHomeView(LoginRequiredMixin, TemplateView):
@@ -19,7 +21,13 @@ class DashboardHomeView(LoginRequiredMixin, TemplateView):
         context['total_visits'] = total_visits
 
         # Completed visits
-        completed_visits = Visit.objects.filter(status='completed').count()  # or the appropriate field to track completion
+        # completed_count = Visit.objects.filter(status="completed").count()
+        # reviewed_count = Visit.objects.filter(status="reviewed").count()
+        # total_finished = completed_count + reviewed_count
+        
+        completed_visits = Visit.objects.filter(
+            Q(status="completed") | Q(status="reviewed")
+        ).count()
         context['completed_visits'] = completed_visits
 
         # Progress percentage
@@ -31,8 +39,8 @@ class DashboardHomeView(LoginRequiredMixin, TemplateView):
         # Total visit days
         visitday_count = VisitDay.objects.count()
         context['visitday_count'] = visitday_count
-        
-        # Total visit days
+
+        # Total Assessment Done
         assignment_count = AssignedCompetence.objects.count()
         context['assignment_count'] = assignment_count
         
