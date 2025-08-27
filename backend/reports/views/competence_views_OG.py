@@ -1,7 +1,7 @@
 from django.views import View
 from django.shortcuts import render
-from django.http import HttpResponse, JsonResponse
-from django.db.models import Avg, Count
+from django.http import HttpResponse
+from django.db.models import Avg
 import pandas as pd
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
@@ -11,14 +11,6 @@ from mentorship.models import AssignedCompetence
 
 
 # ----- Competence Reports CBV -----
-from django.views import View
-from django.shortcuts import render
-from django.http import JsonResponse
-from django.db.models import Avg, Count
-
-from clinical.models import Disease
-from mentorship.models import AssignedCompetence, MentorGrade, MenteeGrade
-
 class CompetenceReportView(View):
     template_name = "reports/competence_reports.html"
 
@@ -26,39 +18,33 @@ class CompetenceReportView(View):
         disease_id = request.GET.get("disease")
         grade_type = request.GET.get("grade", "all")  # all / mentor / mentee
 
-        qs = AssignedCompetence.objects.select_related('mentor_grade', 'mentee_grade').all()
+        qs = AssignedCompetence.objects.all()
         if disease_id:
             qs = qs.filter(competence__disease_id=disease_id)
 
-        # Average grades per disease
-        avg_grade_per_disease = qs.values("competence__disease__name").annotate(
-            avg_mentor_grade=Avg("mentor_grade__score"),
-            avg_mentee_grade=Avg("mentee_grade__score")
-        ).order_by("competence__disease__name")
-
-        # Get all possible grade labels and scores
-        mentor_grades = MentorGrade.objects.all()
-        mentee_grades = MenteeGrade.objects.all()
-
-        # Distribution counts
-        mentor_distribution = [qs.filter(mentor_grade=g).count() for g in mentor_grades]
-        mentee_distribution = [qs.filter(mentee_grade=g).count() for g in mentee_grades]
+        # Determine grade field(s)
+        if grade_type == "mentor":
+            avg_grade_per_disease = qs.values("competence__disease__name").annotate(
+                avg_grade=Avg("mentor_grade")
+            )
+        elif grade_type == "mentee":
+            avg_grade_per_disease = qs.values("competence__disease__name").annotate(
+                avg_grade=Avg("mentee_grade")
+            )
+        else:  # all
+            avg_grade_per_disease = qs.values("competence__disease__name").annotate(
+                avg_mentor_grade=Avg("mentor_grade"),
+                avg_mentee_grade=Avg("mentee_grade")
+            )
 
         context = {
             "avg_grade_per_disease": list(avg_grade_per_disease),
-            "diseases": list(Disease.objects.values("id", "name")),
+            "diseases": Disease.objects.all(),
             "selected_disease": int(disease_id) if disease_id else None,
             "selected_grade": grade_type,
-            "mentor_grade_labels": [g.label for g in mentor_grades],
-            "mentor_grade_data": mentor_distribution,
-            "mentee_grade_labels": [g.label for g in mentee_grades],
-            "mentee_grade_data": mentee_distribution,
         }
-
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse(context, safe=False)
-
         return render(request, self.template_name, context)
+
 
 # ----- Export Excel CBV -----
 class CompetenceExportExcelView(View):
@@ -70,20 +56,26 @@ class CompetenceExportExcelView(View):
         if disease_id:
             qs = qs.filter(competence__disease_id=disease_id)
 
+        # Determine which fields to include
         if grade_type == "mentor":
-            data = qs.values("competence__disease__name", "competence__name", "mentor_grade", "mentee__username")
-            df = pd.DataFrame(list(data)).rename(columns={"mentor_grade": "Mentor Grade"})
+            grade_field = "mentor_grade"
+            filename_suffix = "mentor"
+            data = qs.values("competence__disease__name", "competence__name", grade_field, "mentee__username")
+            df = pd.DataFrame(list(data)).rename(columns={grade_field: "grade"})
         elif grade_type == "mentee":
-            data = qs.values("competence__disease__name", "competence__name", "mentee_grade", "mentee__username")
-            df = pd.DataFrame(list(data)).rename(columns={"mentee_grade": "Mentee Grade"})
-        else:
+            grade_field = "mentee_grade"
+            filename_suffix = "mentee"
+            data = qs.values("competence__disease__name", "competence__name", grade_field, "mentee__username")
+            df = pd.DataFrame(list(data)).rename(columns={grade_field: "grade"})
+        else:  # all
+            filename_suffix = "all"
             data = qs.values("competence__disease__name", "competence__name", "mentor_grade", "mentee_grade", "mentee__username")
-            df = pd.DataFrame(list(data)).rename(columns={"mentor_grade": "Mentor Grade", "mentee_grade": "Mentee Grade"})
+            df = pd.DataFrame(list(data))
 
         response = HttpResponse(
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-        response["Content-Disposition"] = f'attachment; filename="competence_report_{grade_type}.xlsx"'
+        response["Content-Disposition"] = f'attachment; filename="competence_report_{filename_suffix}.xlsx"'
         df.to_excel(response, index=False)
         return response
 
@@ -98,15 +90,21 @@ class CompetenceExportPDFView(View):
         if disease_id:
             qs = qs.filter(competence__disease_id=disease_id)
 
+        # Determine which fields to include
         if grade_type == "mentor":
-            data = qs.values("competence__disease__name", "competence__name", "mentor_grade", "mentee__username")
+            grade_field = "mentor_grade"
+            filename_suffix = "mentor"
+            data = qs.values("competence__disease__name", "competence__name", grade_field, "mentee__username")
         elif grade_type == "mentee":
-            data = qs.values("competence__disease__name", "competence__name", "mentee_grade", "mentee__username")
-        else:
+            grade_field = "mentee_grade"
+            filename_suffix = "mentee"
+            data = qs.values("competence__disease__name", "competence__name", grade_field, "mentee__username")
+        else:  # all
+            filename_suffix = "all"
             data = qs.values("competence__disease__name", "competence__name", "mentor_grade", "mentee_grade", "mentee__username")
 
         response = HttpResponse(content_type="application/pdf")
-        response["Content-Disposition"] = f'attachment; filename="competence_report_{grade_type}.pdf"'
+        response["Content-Disposition"] = f'attachment; filename="competence_report_{filename_suffix}.pdf"'
 
         p = canvas.Canvas(response, pagesize=A4)
         p.setFont("Helvetica-Bold", 14)
@@ -117,11 +115,8 @@ class CompetenceExportPDFView(View):
         for row in data:
             if grade_type == "all":
                 grade_text = f"Mentor: {row['mentor_grade']} | Mentee: {row['mentee_grade']}"
-            elif grade_type == "mentor":
-                grade_text = str(row["mentor_grade"])
             else:
-                grade_text = str(row["mentee_grade"])
-
+                grade_text = str(row[grade_field])
             p.drawString(
                 50,
                 y,
