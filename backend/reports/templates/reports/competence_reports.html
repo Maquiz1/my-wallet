@@ -36,8 +36,9 @@
     <thead class="table-dark">
         <tr>
             <th>Disease</th>
-            <th>Average Mentor Grade</th>
-            <th>Average Mentee Grade</th>
+            <th class="overall-col">Overall Avg</th>
+            <th class="mentor-col">Mentor Avg</th>
+            <th class="mentee-col">Mentee Avg</th>
         </tr>
     </thead>
     <tbody>
@@ -96,42 +97,54 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`?disease=${disease}&grade=${grade}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
         .then(res => res.json())
         .then(data => {
+            // Hide/show columns
+            const showOverall = grade === 'all';
+            const showMentor = grade === 'all' || grade === 'mentor';
+            const showMentee = grade === 'all' || grade === 'mentee';
+
+            document.querySelectorAll('.overall-col').forEach(el => el.style.display = showOverall ? '' : 'none');
+            document.querySelectorAll('.mentor-col').forEach(el => el.style.display = showMentor ? '' : 'none');
+            document.querySelectorAll('.mentee-col').forEach(el => el.style.display = showMentee ? '' : 'none');
+
             // Update table
             const tbody = document.querySelector('table tbody');
             tbody.innerHTML = '';
-            let totalMentor = 0, totalMentee = 0;
             const countRows = data.avg_grade_per_disease.length;
+            let totalMentor = 0, totalMentee = 0;
 
             if(countRows === 0){
-                tbody.innerHTML = '<tr><td colspan="3">No data available.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4">No data available.</td></tr>';
             } else {
                 data.avg_grade_per_disease.forEach(item => {
+                    const overall = item.avg_mentor_grade && item.avg_mentee_grade ? ((item.avg_mentor_grade + item.avg_mentee_grade)/2).toFixed(2) : '-';
                     const row = `<tr>
                         <td>${item.competence__disease__name}</td>
-                        <td>${item.avg_mentor_grade ? item.avg_mentor_grade.toFixed(2) : '-'}</td>
-                        <td>${item.avg_mentee_grade ? item.avg_mentee_grade.toFixed(2) : '-'}</td>
+                        <td class="overall-col">${overall}</td>
+                        <td class="mentor-col">${item.avg_mentor_grade ? item.avg_mentor_grade.toFixed(2) : '-'}</td>
+                        <td class="mentee-col">${item.avg_mentee_grade ? item.avg_mentee_grade.toFixed(2) : '-'}</td>
                     </tr>`;
                     tbody.innerHTML += row;
                     totalMentor += item.avg_mentor_grade || 0;
                     totalMentee += item.avg_mentee_grade || 0;
                 });
 
-                // Add total row
+                const overallTotal = showOverall ? ((totalMentor + totalMentee)/countRows/2).toFixed(2) : '';
                 const totalRow = `<tr class="table-secondary fw-bold">
                     <td>Total / Average</td>
-                    <td>${(totalMentor / countRows).toFixed(2)}</td>
-                    <td>${(totalMentee / countRows).toFixed(2)}</td>
+                    <td class="overall-col">${overallTotal}</td>
+                    <td class="mentor-col">${showMentor ? (totalMentor / countRows).toFixed(2) : ''}</td>
+                    <td class="mentee-col">${showMentee ? (totalMentee / countRows).toFixed(2) : ''}</td>
                 </tr>`;
                 tbody.innerHTML += totalRow;
             }
 
             // Update charts
-            mentorChart.data.labels = data.mentor_grade_labels;
-            mentorChart.data.datasets[0].data = data.mentor_grade_data;
+            mentorChart.data.labels = showMentor ? data.mentor_grade_labels : [];
+            mentorChart.data.datasets[0].data = showMentor ? data.mentor_grade_data : [];
             mentorChart.update();
 
-            menteeChart.data.labels = data.mentee_grade_labels;
-            menteeChart.data.datasets[0].data = data.mentee_grade_data;
+            menteeChart.data.labels = showMentee ? data.mentee_grade_labels : [];
+            menteeChart.data.datasets[0].data = showMentee ? data.mentee_grade_data : [];
             menteeChart.update();
         });
     }
