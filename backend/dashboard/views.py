@@ -27,6 +27,14 @@ class DashboardHomeView(LoginRequiredMixin, TemplateView):
             context['visits_percentage'] = int((completed_visits / total_visits) * 100)
         else:
             context['visits_percentage'] = 0
+            
+        # Total visit days
+        visitday_count = VisitDay.objects.count()
+        context['visitday_count'] = visitday_count
+        
+        # Total visit days
+        assignment_count = AssignedCompetence.objects.count()
+        context['assignment_count'] = assignment_count
         
         # Total number of competences from Competence model
         total_competences = Competence.objects.aggregate(total=Count('id'))['total']  # replace Disease if needed

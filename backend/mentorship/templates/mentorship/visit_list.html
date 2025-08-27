@@ -34,12 +34,12 @@
                 <span class="badge bg-secondary">Pending</span>
               {% elif visit.status == 'assigned' %}
                 <span class="badge bg-info">In Progress</span>
+              {% elif visit.status == 'in_progress' %}
+                <span class="badge bg-info">In Progress</span>
               {% elif visit.status == 'completed' %}
                 <span class="badge bg-success">Completed</span>
               {% elif visit.status == 'reviewed' %}
                 <span class="badge bg-primary">Reviewed</span>
-              {% else %}
-                <span class="badge bg-secondary">Created</span>
               {% endif %}
             </td>
             {% if is_admin %}

@@ -6,6 +6,7 @@ from ..models import Visit
 from ..forms import VisitForm
 from .mixins import AdminCheckMixin, RoleRequiredMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
 
 class IndexView(TemplateView):
     template_name = "mentorship/index.html"
