@@ -90,7 +90,7 @@ class DashboardHomeView(LoginRequiredMixin, TemplateView):
             .order_by('-created_at')[:5]
 
         # Recent activity
-        context['recent_activity'] = AssignedCompetence.objects.select_related('mentee', 'competence', 'visit_day') \
+        context['recent_activity'] = AssignedCompetence.objects.select_related('mentee','assigned_by', 'competence', 'visit_day') \
             .order_by('-created_at')[:5]
             
         context['user'] = user

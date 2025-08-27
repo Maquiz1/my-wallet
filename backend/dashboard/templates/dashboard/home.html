@@ -138,9 +138,17 @@ Dashboard — {{ user.get_full_name|default:user.username }}
 <h3>📝 Recent Activity</h3>
 <ul class="list-group list-group-flush">
     {% for act in recent_activity %}
-    <li class="list-group-item">
+    <!-- <li class="list-group-item">
         {% if act.mentee %}
         {{ act.mentee.get_full_name|default:act.mentee.username }} submitted assessment for
+        {{ act.competence.name }}{% if act.competence.description %} - {{ act.competence.description }}{% endif %}
+        ({{ act.visit_day.date|date:"M d, Y" }})
+        {% endif %}
+    </li> -->
+    <li class="list-group-item">
+        {% if act.assigned_by %}
+        {{ act.assigned_by.get_full_name|default:act.assigned_by.username }} Assigned assessment for
+        {{ act.mentee.get_full_name|default:act.mentee.username }} on
         {{ act.competence.name }}{% if act.competence.description %} - {{ act.competence.description }}{% endif %}
         ({{ act.visit_day.date|date:"M d, Y" }})
         {% endif %}
