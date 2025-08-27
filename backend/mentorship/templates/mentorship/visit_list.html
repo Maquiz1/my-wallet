@@ -3,14 +3,14 @@
 {% block title %}Logbook - Mentorship Lists{% endblock %}
 
 {% block content %}
-  <h2>Visit Schedule</h2>
-
-  <p>
-    <a href="{% url 'dashboard:dashboard' %}" class="btn btn-outline-secondary ms-2">Back to Dashboard</a>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="{% url 'dashboard:dashboard' %}" class="btn btn-outline-secondary">← Back to Dashboard</a>
     {% if is_admin %}
       <a href="{% url 'mentorship:add-visit' %}" class="btn btn-primary">+ Add New Visit</a>
     {% endif %}
-  </p>
+  </div>
+
+  <h2>Visit Schedule</h2>
 
   {% if visits %}
     <table class="table table-striped">
@@ -32,9 +32,7 @@
             <td>
               {% if visit.status == 'pending' %}
                 <span class="badge bg-secondary">Pending</span>
-              {% elif visit.status == 'assigned' %}
-                <span class="badge bg-info">In Progress</span>
-              {% elif visit.status == 'in_progress' %}
+              {% elif visit.status == 'assigned' or visit.status == 'in_progress' %}
                 <span class="badge bg-info">In Progress</span>
               {% elif visit.status == 'completed' %}
                 <span class="badge bg-success">Completed</span>
@@ -43,14 +41,14 @@
               {% endif %}
             </td>
             {% if is_admin %}
-            <td>
-              <a href="{% url 'mentorship:visit-detail' visit.pk %}">View</a> |
-              <a href="{% url 'mentorship:delete-visit' visit.pk %}" class="text-danger">Delete</a>
-            </td>
+              <td>
+                <a href="{% url 'mentorship:visit-detail' visit.pk %}">View</a> |
+                <a href="{% url 'mentorship:delete-visit' visit.pk %}" class="text-danger">Delete</a>
+              </td>
             {% else %}
-            <td>
-              <a href="{% url 'mentorship:visit-detail' visit.pk %}">View</a>
-            </td>
+              <td>
+                <a href="{% url 'mentorship:visit-detail' visit.pk %}">View</a>
+              </td>
             {% endif %}
           </tr>
         {% endfor %}
