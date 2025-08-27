@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports Dashboard{% endblock %}
+
+{% block content %}
+<h3 class="mb-4">📊 General Dashboard Visualization</h3>
+
+<!-- Filter Form -->
+<form id="filterForm" class="row mb-4">
+  <div class="col-md-3">
+    <label>Disease</label>
+    <select id="diseaseSelect" class="form-control">
+      <option value="all">All</option>
+      {% for disease in diseases %}
+        <option value="{{ disease.id }}" {% if selected_disease == disease.id %}selected{% endif %}>
+          {{ disease.name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label>User Filter</label>
+    <select id="userFilter" class="form-control">
+      <option value="all" {% if user_filter == "all" %}selected{% endif %}>All</option>
+      <option value="mentors" {% if user_filter == "mentors" %}selected{% endif %}>Mentors</option>
+      <option value="mentees" {% if user_filter == "mentees" %}selected{% endif %}>Mentees</option>
+    </select>
+  </div>
+  <div class="col-md-2 align-self-end">
+    <button class="btn btn-primary w-100">Apply</button>
+  </div>
+</form>
+
+<div class="row">
+  <div class="col-md-6 mb-4">
+    <div class="card p-3 shadow-sm">
+      <h5 class="card-title">Visits per Site</h5>
+      <canvas id="visitsChart"></canvas>
+    </div>
+  </div>
+
+  <div class="col-md-6 mb-4">
+    <div class="card p-3 shadow-sm">
+      <h5 class="card-title">Mentorship Progress Over Time</h5>
+      <canvas id="progressChart"></canvas>
+    </div>
+  </div>
+
+  <div class="col-md-6 mb-4">
+    <div class="card p-3 shadow-sm">
+      <h5 class="card-title">Competence Completion Status</h5>
+      <canvas id="statusChart"></canvas>
+    </div>
+  </div>
+
+  <div class="col-md-6 mb-4">
+    <div class="card p-3 shadow-sm">
+      <h5 class="card-title">Competence per Visit</h5>
+      <canvas id="compVisitChart"></canvas>
+    </div>
+  </div>
+
+  <div class="col-md-6 mb-4">
+    <div class="card p-3 shadow-sm">
+      <h5 class="card-title">Competence per Disease</h5>
+      <canvas id="compDiseaseChart"></canvas>
+    </div>
+  </div>
+
+  <div class="col-md-6 mb-4">
+    <div class="card p-3 shadow-sm">
+      <h5 class="card-title">Competence per Mentee</h5>
+      <canvas id="compMenteeChart"></canvas>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function createChart(ctxId, type, labels, data, color) {
+  return new Chart(document.getElementById(ctxId).getContext('2d'), {
+    type: type,
+    data: { labels: labels, datasets: [{ label: ctxId.replace(/Chart$/, ''), data: data, backgroundColor: color || 'rgba(54, 162, 235, 0.6)', borderColor: color || 'rgba(54, 162, 235, 1)', fill: type === 'line' ? false : true }] },
+    options: { responsive: true }
+  });
+}
+
+/* INITIAL CHARTS */
+const charts = {
+  visitsChart: createChart('visitsChart', 'bar', {{ visits_labels|safe }}, {{ visits_data|safe }}),
+  progressChart: createChart('progressChart', 'line', {{ progress_labels|safe }}, {{ progress_data|safe }}, 'rgba(75, 192, 192, 1)'),
+  statusChart: createChart('statusChart', 'doughnut', {{ status_labels|safe }}, {{ status_data|safe }}, ['#28a745','#ffc107','#17a2b8']),
+  compVisitChart: createChart('compVisitChart', 'bar', {{ comp_visit_labels|safe }}, {{ comp_visit_data|safe }}),
+  compDiseaseChart: createChart('compDiseaseChart', 'bar', {{ comp_disease_labels|safe }}, {{ comp_disease_data|safe }}),
+  compMenteeChart: createChart('compMenteeChart', 'bar', {{ comp_mentee_labels|safe }}, {{ comp_mentee_data|safe }})
+};
+
+/* AJAX FILTER UPDATE */
+document.getElementById('filterForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const userFilter = document.getElementById('userFilter').value;
+  const disease = document.getElementById('diseaseSelect').value;
+
+  fetch(`?user_filter=${userFilter}&disease=${disease}`, {
+    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+  })
+  .then(res => res.json())
+  .then(data => {
+    for (const [key, chart] of Object.entries(charts)) {
+      const labelsKey = key.replace('Chart','_labels');
+      const dataKey = key.replace('Chart','_data');
+      chart.data.labels = data[labelsKey];
+      chart.data.datasets[0].data = data[dataKey];
+      chart.update();
+    }
+  });
+});
+</script>
+{% endblock %}

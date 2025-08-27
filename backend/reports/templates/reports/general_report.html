@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Dashboard Report{% endblock %}
+{% block title %}Reports | General Report{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2 class="mb-4">Dashboard Report</h2>
+    <h2 class="mb-4">General Report</h2>
 
     <!-- Filters -->
     <form method="get" class="row g-3 mb-4">
@@ -14,7 +14,8 @@
             <select id="disease" name="disease" class="form-select">
                 <option value="all" {% if user_filter == "all" %}selected{% endif %}>All</option>
                 {% for disease in diseases %}
-                    <option value="{{ disease.id }}" {% if selected_disease == disease.id %}selected{% endif %}>{{ disease.name }}</option>
+                <option value="{{ disease.id }}" {% if selected_disease == disease.id %}selected{% endif %}>{{
+                    disease.name }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -37,22 +38,33 @@
         <thead class="table-dark">
             <tr>
                 <th>Disease</th>
+                {% if user_filter == "all" %}
+                <th>Avg Mentor Grade</th>
+                <th>Avg Mentee Grade</th>
+                {% else %}
                 <th>Average Grade</th>
+                {% endif %}
             </tr>
         </thead>
         <tbody>
             {% for comp in competence_per_disease %}
             <tr>
                 <td>{{ comp.competence__disease__name }}</td>
+                {% if user_filter == "mentor" or user_filter == "mentee" %}
                 <td>{{ comp.avg_grade|default:"N/A" }}</td>
+                {% else %}
+                <td>{{ comp.avg_mentor|default:"N/A" }}</td>
+                <td>{{ comp.avg_mentee|default:"N/A" }}</td>
+                {% endif %}
             </tr>
             {% empty %}
             <tr>
-                <td colspan="2">No data</td>
+                <td colspan="3">No data</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+
 
     <!-- Users Data -->
     <h4>Users Data</h4>

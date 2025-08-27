@@ -25,11 +25,10 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
-class DashboardReportView(View):
-    template_name = "reports/dashboard_report.html"
+class GeneralReportView(View):
+    template_name = "reports/general_report.html"
 
     def get(self, request, *args, **kwargs):
-        # ---- Filters ----
         disease_id = request.GET.get("disease", "all")
         user_filter = request.GET.get("user_filter", "all")
 
@@ -46,7 +45,7 @@ class DashboardReportView(View):
             competence_per_disease = comp_qs.values("competence__disease__name").annotate(
                 avg_grade=Avg("mentee_grade")
             )
-        else:  # all → show both averages
+        else:  # all → show both
             competence_per_disease = comp_qs.values("competence__disease__name").annotate(
                 avg_mentor=Avg("mentor_grade"),
                 avg_mentee=Avg("mentee_grade"),
@@ -78,7 +77,6 @@ class DashboardReportView(View):
         # ---- Visits per Location ----
         visits_per_location = Visit.objects.values("site__name").annotate(total_visits=Count("id"))
 
-        # ---- Context ----
         context = {
             "competence_per_disease": list(competence_per_disease),
             "users_data": users_data,
@@ -86,11 +84,10 @@ class DashboardReportView(View):
             "sites_per_country": list(sites_per_country),
             "visits_per_location": list(visits_per_location),
             "diseases": Disease.objects.all(),
-            "selected_disease": disease_id,   # keep string "all" or id
+            "selected_disease": disease_id,
             "user_filter": user_filter,
         }
         return render(request, self.template_name, context)
-
 
 # ----- Dashboard Export Excel -----
 class DashboardExportExcelView(View):

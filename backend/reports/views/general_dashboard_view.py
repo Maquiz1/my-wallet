@@ -8,8 +8,8 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-class IndexView(View):
-    template_name = "reports/index.html"
+class GeneralDashboardReportView(View):
+    template_name = "reports/general_dashboard_report.html"
 
     def get(self, request, *args, **kwargs):
         # ----- Competence Data -----

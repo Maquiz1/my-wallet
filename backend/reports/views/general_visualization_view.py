@@ -4,8 +4,8 @@ from django.http import JsonResponse
 from reports.services import get_dashboard_context
 from clinical.models import Disease
 
-class DashboardReportView(View):
-    template_name = "reports/dashboard_report.html"
+class GeneralVisualizationReportView(View):
+    template_name = "reports/general_visualization_report.html"
 
     def get(self, request, *args, **kwargs):
         disease_id = request.GET.get("disease")

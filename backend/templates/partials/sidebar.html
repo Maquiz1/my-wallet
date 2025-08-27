@@ -19,10 +19,11 @@
             <i class="fas fa-chart-line"></i><span> Reports</span>
         </a>
         <ul class="submenu" id="reports-submenu">
-            <li><a href="{% url 'reports:dashboard-report' %}"><i class="fas fa-calendar-check"></i> General Reports</a></li>
             {% if user.is_authenticated and user.is_superuser %}
-            <li><a href="{% url 'reports:index' %}"><i class="fas fa-calendar-check"></i> General Visualization</a></li>
+            <li><a href="{% url 'reports:general-dashboard' %}"><i class="fas fa-tachometer-alt"></i> General Dashboard</a></li>
+            <li><a href="{% url 'reports:general-visualization' %}"><i class="fas fa-chart-pie"></i> General Visualization</a></li>
             {% endif %}
+            <li><a href="{% url 'reports:general-report' %}"><i class="fas fa-file-alt"></i> General Reports</a></li>
             <li><a href="{% url 'reports:visits' %}"><i class="fas fa-calendar-check"></i> Visits Reports</a></li>
             <li><a href="{% url 'reports:competence' %}"><i class="fas fa-tasks"></i> Competence Reports</a></li>
             <li><a href="{% url 'reports:users' %}"><i class="fas fa-user-friends"></i> Users Reports</a></li>
@@ -43,11 +44,12 @@
 </div>
 
 <style>
-    /* Dropdown styling */
+    /* Sidebar submenu styling */
     .reports-menu .submenu {
         display: none;
         list-style: none;
         padding-left: 15px;
+        margin-top: 5px;
     }
 
     .reports-menu .submenu li {
@@ -57,6 +59,25 @@
     .reports-menu .submenu li a {
         font-size: 14px;
         color: #ddd;
+        display: flex;
+        align-items: center;
+    }
+
+    .reports-menu .submenu li a i {
+        width: 20px; /* align icons */
+        text-align: center;
+        margin-right: 8px;
+    }
+
+    .sidebar a {
+        display: flex;
+        align-items: center;
+    }
+
+    .sidebar a i {
+        width: 20px;
+        text-align: center;
+        margin-right: 8px;
     }
 </style>
 
