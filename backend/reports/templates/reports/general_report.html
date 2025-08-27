@@ -127,7 +127,7 @@
     <tbody>
         {% for comp in top_competences %}
         <tr>
-            <td>{{ comp.competence__name }}</td>
+            <td>{{ comp.competence__name }} - {{ comp.competence__description }}</td>
             <td>{{ comp.competence__disease__name }}</td>
             <td>{{ comp.total_assigned }}</td>
         </tr>

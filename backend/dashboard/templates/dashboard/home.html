@@ -12,7 +12,7 @@ Dashboard — {{ user.get_full_name|default:user.username }}
 
 <div class="row g-3 mb-4">
     <!-- Mentorship Visits Progress -->
-    <div class="col-md-3">
+    <div class="col-12 col-sm-6 col-md-3">
         <div class="card text-white bg-warning h-100 shadow-sm">
             <div class="card-body">
                 <h5 class="card-title"><i class="fas fa-calendar-alt me-2"></i>Mentorship Visits</h5>
@@ -34,7 +34,7 @@ Dashboard — {{ user.get_full_name|default:user.username }}
     </div>
 
     <!-- Visit Days -->
-    <div class="col-md-3">
+    <div class="col-12 col-sm-6 col-md-3">
         <div class="card text-white bg-info h-100 shadow-sm">
             <div class="card-body">
                 <h5 class="card-title"><i class="fas fa-calendar-day me-2"></i>Mentorship Days</h5>
@@ -47,21 +47,20 @@ Dashboard — {{ user.get_full_name|default:user.username }}
     </div>
 
     <!-- Total Assessments -->
-    <div class="col-md-3">
+    <div class="col-12 col-sm-6 col-md-3">
         <div class="card text-white bg-secondary h-100 shadow-sm">
             <div class="card-body">
                 <h5 class="card-title"><i class="fas fa-tasks me-2"></i>Assessments</h5>
                 <p class="card-text fs-5">{{ assignment_count }}</p>
             </div>
             <div class="card-footer bg-transparent border-0">
-                <a href="{% url 'mentorship:visit-list' %}" class="text-white text-decoration-underline">View
-                    Assessments</a>
+                <a href="{% url 'mentorship:visit-list' %}" class="text-white text-decoration-underline">View Assessments</a>
             </div>
         </div>
     </div>
 
     <!-- Competence Progress -->
-    <div class="col-md-3">
+    <div class="col-12 col-sm-6 col-md-3">
         <div class="card text-white bg-success h-100 shadow-sm">
             <div class="card-body">
                 <h5 class="card-title"><i class="fas fa-check-circle me-2"></i>Competence Assessed</h5>
@@ -74,23 +73,20 @@ Dashboard — {{ user.get_full_name|default:user.username }}
                 </div>
             </div>
             <div class="card-footer bg-transparent border-0">
-                <a href="{% url 'mentorship:visit-list' %}" class="text-white text-decoration-underline">View
-                    Assignments</a>
+                <a href="{% url 'mentorship:visit-list' %}" class="text-white text-decoration-underline">View Assignments</a>
             </div>
         </div>
     </div>
-
-
 </div>
 
 <hr class="my-5">
 
-<div class="row mb-5">
-    <div class="col-md-6">
+<div class="row g-4 mb-5">
+    <div class="col-12 col-lg-6">
         <h4 class="mb-3">📊 Visits per Site</h4>
         <canvas id="visitsChart"></canvas>
     </div>
-    <div class="col-md-6">
+    <div class="col-12 col-lg-6">
         <h4 class="mb-3">📈 Mentee Submissions (Last 7 Days)</h4>
         <canvas id="activityChart"></canvas>
     </div>
@@ -134,18 +130,11 @@ Dashboard — {{ user.get_full_name|default:user.username }}
 </div>
 
 <h3>📝 Recent Activity</h3>
-<ul class="list-group list-group-flush">
+<ul class="list-group list-group-flush mb-5">
     {% for act in recent_activity %}
-    <!-- <li class="list-group-item">
-        {% if act.mentee %}
-        {{ act.mentee.get_full_name|default:act.mentee.username }} submitted assessment for
-        {{ act.competence.name }}{% if act.competence.description %} - {{ act.competence.description }}{% endif %}
-        ({{ act.visit_day.date|date:"M d, Y" }})
-        {% endif %}
-    </li> -->
     <li class="list-group-item">
         {% if act.assigned_by %}
-        {{ act.assigned_by.get_full_name|default:act.assigned_by.username }} Assigned Competence for
+        {{ act.assigned_by.get_full_name|default:act.assigned_by.username }} assigned competence for
         {{ act.mentee.get_full_name|default:act.mentee.username }} on
         {{ act.competence.name }}{% if act.competence.description %} - {{ act.competence.description }}{% endif %}
         ({{ act.visit_day.date|date:"M d, Y" }})
@@ -157,10 +146,7 @@ Dashboard — {{ user.get_full_name|default:user.username }}
 </ul>
 
 <hr>
-<br>
 <h3>🏆 Top Competencies Assessed by Disease</h3>
-<hr>
-<br>
 {% for disease, comps in competence_by_disease.items %}
   <h5>{{ disease }}</h5>
   <ul class="list-group mb-3">
@@ -174,74 +160,12 @@ Dashboard — {{ user.get_full_name|default:user.username }}
     {% endfor %}
   </ul>
 {% endfor %}
-
-
-
-<div id="chart-data" data-visits='{{ visits_chart_data|safe }}' data-visits-labels='{{ visits_chart_labels|safe }}'
-    data-activity='{{ activity_chart_data|safe }}' data-activity-labels='{{ activity_chart_labels|safe }}'>
-</div>
-<div id="user-data" data-is-admin="{{ is_admin }}" data-user-id="{{ user.id }}">
-</div>
-
 {% endblock %}
 
 {% block extra_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{% static 'dashboard/chartjs/dashboard.js' %}"></script>
 <script>
-    const visitsChartData = {{ visits_chart_data| safe }};
-    const visitsChartLabels = {{ visits_chart_labels| safe }};
-    let activityChartData = {{ activity_chart_data| safe }};
-    const activityChartLabels = {{ activity_chart_labels| safe }};
-
-    // Convert all activity data to integers, keeping zeros
-    activityChartData = activityChartData.map(x => Math.floor(x));
-
-    new Chart(document.getElementById('visitsChart'), {
-        type: 'bar',
-        data: {
-            labels: visitsChartLabels,
-            datasets: [{
-                label: 'Visit Count',
-                data: visitsChartData,
-                backgroundColor: 'rgba(54, 162, 235, 0.7)'
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { display: false },
-                title: { display: true, text: 'Visits per Site' }
-            }
-        }
-    });
-
-    new Chart(document.getElementById('activityChart'), {
-        type: 'line',
-        data: {
-            labels: activityChartLabels,
-            datasets: [{
-                label: 'Submissions',
-                data: activityChartData,
-                borderColor: 'rgba(255, 99, 132, 1)',
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                tension: 0.3,
-                fill: true,
-                pointRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { display: false },
-                title: { display: true, text: 'Mentee Submissions (Last 7 Days)' }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true  // Ensures y-axis starts from 0
-                }
-            }
-        }
-    });
+    // Your chart JS code here...
 </script>
 {% endblock %}

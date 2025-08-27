@@ -19,12 +19,12 @@
             <i class="fas fa-chart-line"></i><span> Reports</span>
         </a>
         <ul class="submenu" id="reports-submenu">
-            {% if user.is_authenticated and user.is_superuser %}
-            <li><a href="{% url 'reports:general-dashboard' %}"><i class="fas fa-tachometer-alt"></i> General
+                        <li><a href="{% url 'reports:general-dashboard' %}"><i class="fas fa-tachometer-alt"></i> General
                     Dashboard</a></li>
-            {% endif %}
-            <li><a href="{% url 'reports:general-visualization' %}"><i class="fas fa-chart-pie"></i> General
+            {% if user.is_authenticated and user.is_superuser %}
+                                <li><a href="{% url 'reports:general-visualization' %}"><i class="fas fa-chart-pie"></i> General
                     Visualization</a></li>
+            {% endif %}
             <li><a href="{% url 'reports:general-report' %}"><i class="fas fa-file-alt"></i> General Reports</a></li>
             <li><a href="{% url 'reports:visits' %}"><i class="fas fa-calendar-check"></i> Visits Reports</a></li>
             <li><a href="{% url 'reports:competence' %}"><i class="fas fa-tasks"></i> Competence Reports</a></li>

@@ -1,121 +1,179 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% load static %}
 
-{% block title %}Reports | General Dashboard Visualization{% endblock %}
+{% block title %}Reports | General Visualization{% endblock %}
 
 {% block content %}
-<h3 class="mb-4">📊 General Dashboard Visualization</h3>
+<div class="container mt-4">
+    <h2 class="mb-4">General Report</h2>
 
-<!-- Filter Form -->
-<form id="filterForm" class="row mb-4">
-  <div class="col-md-3">
-    <label>Disease</label>
-    <select id="diseaseSelect" class="form-control">
-      <option value="all">All</option>
-      {% for disease in diseases %}
-        <option value="{{ disease.id }}" {% if selected_disease == disease.id %}selected{% endif %}>
-          {{ disease.name }}
-        </option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="col-md-3">
-    <label>User Filter</label>
-    <select id="userFilter" class="form-control">
-      <option value="all" {% if user_filter == "all" %}selected{% endif %}>All</option>
-      <option value="mentors" {% if user_filter == "mentors" %}selected{% endif %}>Mentors</option>
-      <option value="mentees" {% if user_filter == "mentees" %}selected{% endif %}>Mentees</option>
-    </select>
-  </div>
-  <div class="col-md-2 align-self-end">
-    <button class="btn btn-primary w-100">Apply</button>
-  </div>
-</form>
+    <!-- Filters -->
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-md-2">
+            <label>Disease</label>
+            <select name="disease" class="form-select">
+                <option value="all">All</option>
+                {% for disease in diseases %}
+                    <option value="{{ disease.id }}" {% if selected_disease|stringformat:"s" == disease.id|stringformat:"s" %}selected{% endif %}>{{ disease.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label>User Type</label>
+            <select name="user_filter" class="form-select">
+                <option value="all" {% if user_filter == "all" %}selected{% endif %}>All</option>
+                <option value="mentor" {% if user_filter == "mentor" %}selected{% endif %}>Mentor</option>
+                <option value="mentee" {% if user_filter == "mentee" %}selected{% endif %}>Mentee</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label>Site</label>
+            <select name="site" class="form-select">
+                <option value="all">All</option>
+                {% for site in sites %}
+                    <option value="{{ site.id }}" {% if selected_site|stringformat:"s" == site.id|stringformat:"s" %}selected{% endif %}>{{ site.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label>Mentor</label>
+            <select name="mentor" class="form-select">
+                <option value="all">All</option>
+                {% for mentor in mentors %}
+                    <option value="{{ mentor.id }}" {% if selected_mentor|stringformat:"s" == mentor.id|stringformat:"s" %}selected{% endif %}>{{ mentor.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label>Mentee</label>
+            <select name="mentee" class="form-select">
+                <option value="all">All</option>
+                {% for mentee in mentees %}
+                    <option value="{{ mentee.id }}" {% if selected_mentee|stringformat:"s" == mentee.id|stringformat:"s" %}selected{% endif %}>{{ mentee.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2 align-self-end">
+            <button type="submit" class="btn btn-primary w-100">Filter</button>
+        </div>
+    </form>
 
-<div class="row">
-  <div class="col-md-6 mb-4">
-    <div class="card p-3 shadow-sm">
-      <h5 class="card-title">Visits per Site</h5>
-      <canvas id="visitsChart"></canvas>
-    </div>
-  </div>
+    <!-- Charts -->
+    <h4>Competence per Disease</h4>
+    <canvas id="competenceDiseaseChart" height="150"></canvas>
 
-  <div class="col-md-6 mb-4">
-    <div class="card p-3 shadow-sm">
-      <h5 class="card-title">Mentorship Progress Over Time</h5>
-      <canvas id="progressChart"></canvas>
-    </div>
-  </div>
+    <h4>Top 5 Competences</h4>
+    <canvas id="topCompetencesChart" height="150"></canvas>
 
-  <div class="col-md-6 mb-4">
-    <div class="card p-3 shadow-sm">
-      <h5 class="card-title">Competence Completion Status</h5>
-      <canvas id="statusChart"></canvas>
-    </div>
-  </div>
+    <h4>Users Data (Grades)</h4>
+    <canvas id="usersDataChart" height="150"></canvas>
 
-  <div class="col-md-6 mb-4">
-    <div class="card p-3 shadow-sm">
-      <h5 class="card-title">Competence per Visit</h5>
-      <canvas id="compVisitChart"></canvas>
-    </div>
-  </div>
+    <h4>Visits per Site</h4>
+    <canvas id="visitsPerSiteChart" height="150"></canvas>
 
-  <div class="col-md-6 mb-4">
-    <div class="card p-3 shadow-sm">
-      <h5 class="card-title">Competence per Disease</h5>
-      <canvas id="compDiseaseChart"></canvas>
-    </div>
-  </div>
+    <h4>Sites per Country</h4>
+    <canvas id="sitesPerCountryChart" height="150"></canvas>
 
-  <div class="col-md-6 mb-4">
-    <div class="card p-3 shadow-sm">
-      <h5 class="card-title">Competence per Mentee</h5>
-      <canvas id="compMenteeChart"></canvas>
-    </div>
-  </div>
+    <h4>Visits per Location</h4>
+    <canvas id="visitsPerLocationChart" height="150"></canvas>
 </div>
-{% endblock %}
 
-{% block extra_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 <script>
-function createChart(ctxId, type, labels, data, color) {
-  return new Chart(document.getElementById(ctxId).getContext('2d'), {
-    type: type,
-    data: { labels: labels, datasets: [{ label: ctxId.replace(/Chart$/, ''), data: data, backgroundColor: color || 'rgba(54, 162, 235, 0.6)', borderColor: color || 'rgba(54, 162, 235, 1)', fill: type === 'line' ? false : true }] },
-    options: { responsive: true }
-  });
+function loadCharts() {
+    $.ajax({
+        url: window.location.href,
+        type: 'get',
+        headers: { 'x-requested-with': 'XMLHttpRequest' },
+        success: function(data) {
+            // Competence per Disease
+            const compLabels = data.competence_per_disease.map(c => c['competence__disease__name']);
+            const compMentor = data.competence_per_disease.map(c => c['avg_mentor'] || c['avg_grade'] || 0);
+            const compMentee = data.competence_per_disease.map(c => c['avg_mentee'] || 0);
+            if(window.compChart) window.compChart.destroy();
+            const ctx1 = document.getElementById('competenceDiseaseChart').getContext('2d');
+            window.compChart = new Chart(ctx1, {
+                type: 'bar',
+                data: { labels: compLabels, datasets: [
+                    { label: 'Avg Mentor', data: compMentor, backgroundColor: 'rgba(54, 162, 235, 0.7)' },
+                    { label: 'Avg Mentee', data: compMentee, backgroundColor: 'rgba(255, 99, 132, 0.7)' }
+                ]},
+                options: { responsive: true, scales: { y: { beginAtZero: true } } }
+            });
+
+            // Top Competences
+            const topLabels = data.top_competences.map(c => c['competence__name']);
+            const topData = data.top_competences.map(c => c['total_assigned']);
+            if(window.topCompChart) window.topCompChart.destroy();
+            const ctx2 = document.getElementById('topCompetencesChart').getContext('2d');
+            window.topCompChart = new Chart(ctx2, {
+                type: 'bar',
+                data: { labels: topLabels, datasets: [{ label: 'Total Assigned', data: topData, backgroundColor: 'rgba(75, 192, 192, 0.7)' }] },
+                options: { indexAxis: 'y', responsive: true, scales: { x: { beginAtZero: true } } }
+            });
+
+            // Users Data
+            const userLabels = data.users_data.map(u => u.username);
+            const userMentor = data.users_data.map(u => u.avg_mentor_grade || 0);
+            const userMentee = data.users_data.map(u => u.avg_mentee_grade || 0);
+            if(window.usersChart) window.usersChart.destroy();
+            const ctx3 = document.getElementById('usersDataChart').getContext('2d');
+            window.usersChart = new Chart(ctx3, {
+                type: 'bar',
+                data: { labels: userLabels, datasets: [
+                    { label: 'Avg Mentor Grade', data: userMentor, backgroundColor: 'rgba(153, 102, 255, 0.7)' },
+                    { label: 'Avg Mentee Grade', data: userMentee, backgroundColor: 'rgba(255, 159, 64, 0.7)' }
+                ]},
+                options: { responsive: true, scales: { y: { beginAtZero: true } } }
+            });
+
+            // Visits per Site
+            const visitsSiteLabels = data.visits_per_site.map(v => v.site__name);
+            const visitsSiteData = data.visits_per_site.map(v => v.total);
+            if(window.visitsSiteChart) window.visitsSiteChart.destroy();
+            const ctx4 = document.getElementById('visitsPerSiteChart').getContext('2d');
+            window.visitsSiteChart = new Chart(ctx4, {
+                type: 'bar',
+                data: { labels: visitsSiteLabels, datasets: [{ label: 'Total Visits', data: visitsSiteData, backgroundColor: 'rgba(255, 206, 86, 0.7)' }] },
+                options: { responsive: true, scales: { y: { beginAtZero: true } } }
+            });
+
+            // Sites per Country
+            const sitesCountryLabels = data.sites_per_country.map(s => s['site__district__region__country__name']);
+            const sitesCountryData = data.sites_per_country.map(s => s.total_sites);
+            if(window.sitesCountryChart) window.sitesCountryChart.destroy();
+            const ctx5 = document.getElementById('sitesPerCountryChart').getContext('2d');
+            window.sitesCountryChart = new Chart(ctx5, {
+                type: 'pie',
+                data: { labels: sitesCountryLabels, datasets: [{ data: sitesCountryData, backgroundColor: ['rgba(255,99,132,0.7)','rgba(54,162,235,0.7)','rgba(255,206,86,0.7)','rgba(75,192,192,0.7)','rgba(153,102,255,0.7)','rgba(255,159,64,0.7)'], borderColor:'#fff', borderWidth:1 }]},
+                options: { responsive: true }
+            });
+
+            // Visits per Location
+            const visitsLocLabels = data.visits_per_location.map(v => v.site__name);
+            const visitsLocData = data.visits_per_location.map(v => v.total_visits);
+            if(window.visitsLocChart) window.visitsLocChart.destroy();
+            const ctx6 = document.getElementById('visitsPerLocationChart').getContext('2d');
+            window.visitsLocChart = new Chart(ctx6, {
+                type: 'pie',
+                data: { labels: visitsLocLabels, datasets: [{ data: visitsLocData, backgroundColor: ['rgba(255,99,132,0.7)','rgba(54,162,235,0.7)','rgba(255,206,86,0.7)','rgba(75,192,192,0.7)','rgba(153,102,255,0.7)','rgba(255,159,64,0.7)'], borderColor:'#fff', borderWidth:1 }]},
+                options: { responsive: true }
+            });
+        }
+    });
 }
 
-/* INITIAL CHARTS */
-const charts = {
-  visitsChart: createChart('visitsChart', 'bar', {{ visits_labels|safe }}, {{ visits_data|safe }}),
-  progressChart: createChart('progressChart', 'line', {{ progress_labels|safe }}, {{ progress_data|safe }}, 'rgba(75, 192, 192, 1)'),
-  statusChart: createChart('statusChart', 'doughnut', {{ status_labels|safe }}, {{ status_data|safe }}, ['#28a745','#ffc107','#17a2b8']),
-  compVisitChart: createChart('compVisitChart', 'bar', {{ comp_visit_labels|safe }}, {{ comp_visit_data|safe }}),
-  compDiseaseChart: createChart('compDiseaseChart', 'bar', {{ comp_disease_labels|safe }}, {{ comp_disease_data|safe }}),
-  compMenteeChart: createChart('compMenteeChart', 'bar', {{ comp_mentee_labels|safe }}, {{ comp_mentee_data|safe }})
-};
+// Initial load
+loadCharts();
 
-/* AJAX FILTER UPDATE */
-document.getElementById('filterForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  const userFilter = document.getElementById('userFilter').value;
-  const disease = document.getElementById('diseaseSelect').value;
-
-  fetch(`?user_filter=${userFilter}&disease=${disease}`, {
-    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-  })
-  .then(res => res.json())
-  .then(data => {
-    for (const [key, chart] of Object.entries(charts)) {
-      const labelsKey = key.replace('Chart','_labels');
-      const dataKey = key.replace('Chart','_data');
-      chart.data.labels = data[labelsKey];
-      chart.data.datasets[0].data = data[dataKey];
-      chart.update();
-    }
-  });
+// Reload charts on filter change
+$('select[name]').change(function() {
+    const params = new URLSearchParams();
+    $('select[name]').each(function() { params.set(this.name, $(this).val()); });
+    history.replaceState(null, '', '?' + params.toString());
+    loadCharts();
 });
 </script>
 {% endblock %}
