@@ -1,3 +1,4 @@
+from collections import defaultdict
 from clinical.models import Disease,Competence
 from mentorship.models import Visit, VisitDay, AssignedCompetence
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -92,6 +93,26 @@ class DashboardHomeView(LoginRequiredMixin, TemplateView):
         # Recent activity
         context['recent_activity'] = AssignedCompetence.objects.select_related('mentee','assigned_by', 'competence', 'visit_day') \
             .order_by('-created_at')[:5]
-            
+
+
+        # Aggregate top 3 competencies per disease
+        competence_by_disease = {}
+
+        # Get all diseases
+        diseases = Competence.objects.values_list('disease__name', flat=True).distinct()
+
+        for disease in diseases:
+            # Get competencies for this disease
+            comps = Competence.objects.filter(disease__name=disease).annotate(
+                assigned_count=Count(
+                    'assignedcompetence',
+                    filter=Q(assignedcompetence__status__in=['completed', 'reviewed'])
+                )
+            ).order_by('-assigned_count')[:3]  # top 3
+
+            competence_by_disease[disease] = comps
+
+        context['competence_by_disease'] = competence_by_disease
+
         context['user'] = user
         return context
