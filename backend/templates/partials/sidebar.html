@@ -15,17 +15,20 @@
 
     <!-- Reports Section -->
     <div class="reports-menu">
-        <a href="{% url 'reports:index' %}"><i class="fas fa-chart-line"></i><span> Reports</span></a>
-        <ul class="submenu">
-            <li><a href="{% url 'reports:dashboard-report' %}"><i class="fas fa-calendar-check"></i> General Reports</a>
-            </li>
+        <a href="javascript:void(0);" onclick="toggleReportsMenu()">
+            <i class="fas fa-chart-line"></i><span> Reports</span>
+        </a>
+        <ul class="submenu" id="reports-submenu">
+            <li><a href="{% url 'reports:dashboard-report' %}"><i class="fas fa-calendar-check"></i> General Reports</a></li>
             {% if user.is_authenticated and user.is_superuser %}
             <li><a href="{% url 'reports:index' %}"><i class="fas fa-calendar-check"></i> General Visualization</a></li>
             {% endif %}
             <li><a href="{% url 'reports:visits' %}"><i class="fas fa-calendar-check"></i> Visits Reports</a></li>
             <li><a href="{% url 'reports:competence' %}"><i class="fas fa-tasks"></i> Competence Reports</a></li>
             <li><a href="{% url 'reports:users' %}"><i class="fas fa-user-friends"></i> Users Reports</a></li>
+            {% if user.is_authenticated and user.is_superuser %}
             <li><a href="{% url 'reports:locations' %}"><i class="fas fa-map-marked-alt"></i> Locations Reports</a></li>
+            {% endif %}
         </ul>
     </div>
 
@@ -40,15 +43,11 @@
 </div>
 
 <style>
-    /* Simple dropdown styling for reports */
+    /* Dropdown styling */
     .reports-menu .submenu {
         display: none;
         list-style: none;
         padding-left: 15px;
-    }
-
-    .reports-menu:hover .submenu {
-        display: block;
     }
 
     .reports-menu .submenu li {
@@ -60,3 +59,10 @@
         color: #ddd;
     }
 </style>
+
+<script>
+    function toggleReportsMenu() {
+        var submenu = document.getElementById("reports-submenu");
+        submenu.style.display = (submenu.style.display === "block") ? "none" : "block";
+    }
+</script>

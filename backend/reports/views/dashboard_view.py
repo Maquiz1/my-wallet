@@ -14,61 +14,80 @@ from reportlab.lib.pagesizes import A4
 User = get_user_model()
 
 # ----- Dashboard View -----
+from django.shortcuts import render
+from django.views import View
+from django.db.models import Count, Avg
+from mentorship.models import AssignedCompetence, Visit
+from locations.models import Site
+from clinical.models import Disease
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+
 class DashboardReportView(View):
     template_name = "reports/dashboard_report.html"
 
     def get(self, request, *args, **kwargs):
-        # ----- Competence Data -----
-        disease_id = request.GET.get("disease")
-        user_filter = request.GET.get("user_filter")  # mentor, mentee
+        # ---- Filters ----
+        disease_id = request.GET.get("disease", "all")
+        user_filter = request.GET.get("user_filter", "all")
+
+        # ---- Competence Data ----
         comp_qs = AssignedCompetence.objects.all()
-
-        if disease_id and disease_id != "all":
+        if disease_id != "all":
             comp_qs = comp_qs.filter(competence__disease_id=disease_id)
+
         if user_filter == "mentor":
-            comp_qs = comp_qs.filter(assigned_by__groups__name="Mentor")
+            competence_per_disease = comp_qs.values("competence__disease__name").annotate(
+                avg_grade=Avg("mentor_grade")
+            )
         elif user_filter == "mentee":
-            comp_qs = comp_qs.filter(mentee__groups__name="Mentee")
+            competence_per_disease = comp_qs.values("competence__disease__name").annotate(
+                avg_grade=Avg("mentee_grade")
+            )
+        else:  # all → show both averages
+            competence_per_disease = comp_qs.values("competence__disease__name").annotate(
+                avg_mentor=Avg("mentor_grade"),
+                avg_mentee=Avg("mentee_grade"),
+            )
 
-        competence_per_disease = comp_qs.values(
-            "competence__disease__name"
-        ).annotate(avg_grade=Avg("mentee_grade"))
-
-        # ----- Users Data (Mentors & Mentees only) -----
+        # ---- Users Data ----
         users_data = []
-        for user in User.objects.filter(groups__name__in=["Mentor", "Mentee"]):
+        for user in User.objects.filter(groups__name__in=["Mentor", "Mentee"]).distinct():
             groups = user.groups.values_list("name", flat=True)
-            mentee_count = AssignedCompetence.objects.filter(mentee=user).count()
-            mentor_count = AssignedCompetence.objects.filter(assigned_by=user).count()
-            avg_mentee_grade = AssignedCompetence.objects.filter(mentee=user).aggregate(avg=Avg("mentee_grade"))["avg"]
-            avg_mentor_grade = AssignedCompetence.objects.filter(assigned_by=user).aggregate(avg=Avg("mentor_grade"))["avg"]
-            visits_conducted = Visit.objects.filter(mentor=user).count()
-            visits_attended = Visit.objects.filter(attendees=user).count() if hasattr(Visit, "attendees") else 0
+            mentee_qs = AssignedCompetence.objects.filter(mentee=user)
+            mentor_qs = AssignedCompetence.objects.filter(assigned_by=user)
             users_data.append({
                 "username": user.username,
                 "groups": list(groups),
-                "mentee_count": mentee_count,
-                "mentor_count": mentor_count,
-                "avg_mentee_grade": avg_mentee_grade,
-                "avg_mentor_grade": avg_mentor_grade,
-                "mentorship_conducted": visits_conducted,
-                "mentorship_attended": visits_attended,
+                "mentee_count": mentee_qs.count(),
+                "mentor_count": mentor_qs.count(),
+                "avg_mentee_grade": mentee_qs.aggregate(Avg("mentee_grade"))["mentee_grade__avg"],
+                "avg_mentor_grade": mentor_qs.aggregate(Avg("mentor_grade"))["mentor_grade__avg"],
+                "visits_conducted": Visit.objects.filter(mentor=user).count(),
+                "visits_attended": Visit.objects.filter(attendees=user).count() if hasattr(Visit, "attendees") else 0,
             })
 
-        # ----- Visits Data -----
+        # ---- Visits per Site ----
         visits_per_site = Visit.objects.values("site__name").annotate(total=Count("id"))
 
-        # ----- Sites Data -----
+        # ---- Sites per Country ----
         sites_per_country = Site.objects.values("district__region__country__name").annotate(total_sites=Count("id"))
 
+        # ---- Visits per Location ----
+        visits_per_location = Visit.objects.values("site__name").annotate(total_visits=Count("id"))
+
+        # ---- Context ----
         context = {
             "competence_per_disease": list(competence_per_disease),
             "users_data": users_data,
             "visits_per_site": list(visits_per_site),
             "sites_per_country": list(sites_per_country),
+            "visits_per_location": list(visits_per_location),
             "diseases": Disease.objects.all(),
-            "selected_disease": int(disease_id) if disease_id and disease_id != "all" else None,
-            "user_filter": user_filter or "all",
+            "selected_disease": disease_id,   # keep string "all" or id
+            "user_filter": user_filter,
         }
         return render(request, self.template_name, context)
 
@@ -134,71 +153,6 @@ class DashboardExportExcelView(View):
         response["Content-Disposition"] = 'attachment; filename="dashboard_report.xlsx"'
         return response
 
-    
-# class DashboardExportExcelView(View):
-#     def get(self, request, *args, **kwargs):
-#         disease_id = request.GET.get("disease")
-#         user_filter = request.GET.get("user_filter")  # mentor, mentee, all
-
-#         # ----- Competence Data -----
-#         comp_qs = AssignedCompetence.objects.all()
-#         if disease_id and disease_id != "all":
-#             comp_qs = comp_qs.filter(competence__disease_id=disease_id)
-#         if user_filter == "mentor":
-#             comp_qs = comp_qs.filter(assigned_by__groups__name="Mentor")
-#         elif user_filter == "mentee":
-#             comp_qs = comp_qs.filter(mentee__groups__name="Mentee")
-
-#         competence_data = comp_qs.values(
-#             "competence__disease__name",
-#             "competence__name",
-#             "mentee__username",
-#             "mentee_grade",
-#             "mentor_grade"
-#         )
-
-#         # ----- Users Data -----
-#         users_list = []
-#         for user in User.objects.all():
-#             groups = user.groups.values_list("name", flat=True)
-#             mentee_count = AssignedCompetence.objects.filter(mentee=user).count()
-#             mentor_count = AssignedCompetence.objects.filter(assigned_by=user).count()
-#             avg_mentee_grade = AssignedCompetence.objects.filter(mentee=user).aggregate(avg=Avg("mentee_grade"))["avg"]
-#             avg_mentor_grade = AssignedCompetence.objects.filter(assigned_by=user).aggregate(avg=Avg("mentor_grade"))["avg"]
-#             visits_conducted = Visit.objects.filter(mentor=user).count()
-#             visits_attended = Visit.objects.filter(attendees=user).count() if hasattr(Visit, "attendees") else 0
-#             users_list.append({
-#                 "username": user.username,
-#                 "groups": ", ".join(groups),
-#                 "mentee_count": mentee_count,
-#                 "mentor_count": mentor_count,
-#                 "avg_mentee_grade": avg_mentee_grade,
-#                 "avg_mentor_grade": avg_mentor_grade,
-#                 "visits_conducted": visits_conducted,
-#                 "visits_attended": visits_attended,
-#             })
-
-#         # ----- Visits per Site -----
-#         visits_per_site = Visit.objects.values("site__name").annotate(total=Count("id"))
-
-#         # ----- Sites per Country -----
-#         sites_per_country = Site.objects.values("country__name").annotate(total_sites=Count("id"))
-
-#         # ----- Write Excel -----
-#         output = io.BytesIO()
-#         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-#             pd.DataFrame(list(competence_data)).to_excel(writer, sheet_name="Competence", index=False)
-#             pd.DataFrame(users_list).to_excel(writer, sheet_name="Users", index=False)
-#             pd.DataFrame(list(visits_per_site)).to_excel(writer, sheet_name="VisitsPerSite", index=False)
-#             pd.DataFrame(list(sites_per_country)).to_excel(writer, sheet_name="SitesPerCountry", index=False)
-#             writer.save()
-
-#         response = HttpResponse(
-#             output.getvalue(),
-#             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-#         )
-#         response["Content-Disposition"] = 'attachment; filename="dashboard_report.xlsx"'
-#         return response
     
 class DashboardExportPDFView(View):
     def get(self, request, *args, **kwargs):
