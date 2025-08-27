@@ -147,7 +147,7 @@ Dashboard — {{ user.get_full_name|default:user.username }}
     </li> -->
     <li class="list-group-item">
         {% if act.assigned_by %}
-        {{ act.assigned_by.get_full_name|default:act.assigned_by.username }} Assigned assessment for
+        {{ act.assigned_by.get_full_name|default:act.assigned_by.username }} Assigned Competence for
         {{ act.mentee.get_full_name|default:act.mentee.username }} on
         {{ act.competence.name }}{% if act.competence.description %} - {{ act.competence.description }}{% endif %}
         ({{ act.visit_day.date|date:"M d, Y" }})
