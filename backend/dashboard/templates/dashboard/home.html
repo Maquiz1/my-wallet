@@ -37,11 +37,11 @@ Dashboard — {{ user.get_full_name|default:user.username }}
     <div class="col-md-3">
         <div class="card text-white bg-info h-100 shadow-sm">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-calendar-day me-2"></i>Visit Days</h5>
+                <h5 class="card-title"><i class="fas fa-calendar-day me-2"></i>Mentorship Days</h5>
                 <p class="card-text fs-5">{{ visitday_count }} Days</p>
             </div>
             <div class="card-footer bg-transparent border-0">
-                <a href="{% url 'mentorship:visit-list' %}" class="text-white text-decoration-underline">View Visits</a>
+                <a href="{% url 'mentorship:visit-list' %}" class="text-white text-decoration-underline">View Days</a>
             </div>
         </div>
     </div>
