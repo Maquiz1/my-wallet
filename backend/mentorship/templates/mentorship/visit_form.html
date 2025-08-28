@@ -4,26 +4,25 @@
 {% block title %}Logbook - Mentorship Visit Form{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Add New Visit</h2>
-    {% if is_admin %}
-      <button type="submit" form="visit-form" class="btn btn-success">Create Visit</button>
-    {% endif %}
+<div class="container mt-4 position-relative">
+
+  <!-- Top-right Back to Dashboard -->
+  <div class="position-absolute top-0 end-0 mt-3 me-3">
+    <a href="{% url 'dashboard:dashboard' %}" class="btn btn-outline-primary">Back to Dashboard</a>
   </div>
+
+  <h2 class="mb-4">Add New Visit</h2>
 
   {% if is_admin %}
   <form id="visit-form" method="post" class="needs-validation" novalidate>
     {% csrf_token %}
     {{ form.non_field_errors }}
 
+    <!-- Site and Mentor -->
     <div class="row mb-3">
       <div class="col-md-6">
         <label for="{{ form.site.id_for_label }}" class="form-label">{{ form.site.label }}</label>
         {{ form.site }}
-        {% if form.site.help_text %}
-          <div class="form-text">{{ form.site.help_text }}</div>
-        {% endif %}
         {% for error in form.site.errors %}
           <div class="invalid-feedback d-block">{{ error }}</div>
         {% endfor %}
@@ -32,22 +31,17 @@
       <div class="col-md-6">
         <label for="{{ form.mentor.id_for_label }}" class="form-label">{{ form.mentor.label }}</label>
         {{ form.mentor }}
-        {% if form.mentor.help_text %}
-          <div class="form-text">{{ form.mentor.help_text }}</div>
-        {% endif %}
         {% for error in form.mentor.errors %}
           <div class="invalid-feedback d-block">{{ error }}</div>
         {% endfor %}
       </div>
     </div>
 
+    <!-- Start and End Dates -->
     <div class="row mb-3">
       <div class="col-md-6">
         <label for="{{ form.start_date.id_for_label }}" class="form-label">{{ form.start_date.label }}</label>
         {{ form.start_date }}
-        {% if form.start_date.help_text %}
-          <div class="form-text">{{ form.start_date.help_text }}</div>
-        {% endif %}
         {% for error in form.start_date.errors %}
           <div class="invalid-feedback d-block">{{ error }}</div>
         {% endfor %}
@@ -56,24 +50,18 @@
       <div class="col-md-6">
         <label for="{{ form.end_date.id_for_label }}" class="form-label">{{ form.end_date.label }}</label>
         {{ form.end_date }}
-        {% if form.end_date.help_text %}
-          <div class="form-text">{{ form.end_date.help_text }}</div>
-        {% endif %}
         {% for error in form.end_date.errors %}
           <div class="invalid-feedback d-block">{{ error }}</div>
         {% endfor %}
       </div>
     </div>
 
-    {% comment %} Render any additional fields that are not site, mentor, start_date, end_date {% endcomment %}
+    <!-- Additional Fields -->
     {% for field in form %}
       {% if field.name not in "site mentor start_date end_date" %}
       <div class="mb-3">
         <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
         {{ field }}
-        {% if field.help_text %}
-          <div class="form-text">{{ field.help_text }}</div>
-        {% endif %}
         {% for error in field.errors %}
           <div class="invalid-feedback d-block">{{ error }}</div>
         {% endfor %}
@@ -81,20 +69,22 @@
       {% endif %}
     {% endfor %}
 
-    <div class="mt-4 d-flex flex-wrap gap-2">
+    <!-- Bottom Buttons: Cancel (left) and Create Visit (right) -->
+    <div class="d-flex justify-content-between mt-4">
       <a href="{% url 'mentorship:visit-list' %}" class="btn btn-secondary">Cancel</a>
-      <a href="{% url 'dashboard:dashboard' %}" class="btn btn-outline-primary">Back to Dashboard</a>
+      <button type="submit" form="visit-form" class="btn btn-success">Create Visit</button>
     </div>
+
   </form>
 
   {% else %}
-  <div class="alert alert-warning">
+  <div class="alert alert-warning mt-4">
     You do not have permission to create a new visit.
   </div>
-  <a href="{% url 'mentorship:visit-list' %}" class="btn btn-secondary">Back to Visit List</a>
+  <a href="{% url 'mentorship:visit-list' %}" class="btn btn-secondary mt-3">Back to Visit List</a>
   {% endif %}
-</div>
 
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
