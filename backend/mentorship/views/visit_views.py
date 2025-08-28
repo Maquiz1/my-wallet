@@ -7,12 +7,18 @@ from ..forms import VisitForm
 from .mixins import AdminCheckMixin, RoleRequiredMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
+from clinical.models import Disease  # since disease comes from clinical app
+from locations.models import Site        # assuming you have a Site model
+from django.contrib.auth import get_user_model
+from django.db.models import Q
+from django.utils.dateparse import parse_date
+
+User = get_user_model()
 
 class IndexView(TemplateView):
     template_name = "mentorship/index.html"
 
-
-class VisitListView(LoginRequiredMixin, AdminCheckMixin, ListView):
+class VisitListView(LoginRequiredMixin, ListView):
     model = Visit
     template_name = 'mentorship/visit_list.html'
     context_object_name = 'visits'
@@ -20,26 +26,58 @@ class VisitListView(LoginRequiredMixin, AdminCheckMixin, ListView):
 
     def get_queryset(self):
         user = self.request.user
+        queryset = Visit.objects.all().order_by('-start_date')
 
-        # Reviewer sees all visits
-        if user.groups.filter(name='Reviewer').exists() or user.is_superuser:
-            return Visit.objects.all().order_by('-start_date')
-
-        # Admin sees visits they created (for any site they selected)
-        elif user.groups.filter(name='Admin').exists():
-            return Visit.objects.filter(created_by=user).order_by('-start_date')
-
-        # Mentor sees visits where they are the mentor
+        # Role-based filtering
+        if user.groups.filter(name='Admin').exists():
+            queryset = queryset.filter(created_by=user)
         elif user.groups.filter(name='Mentor').exists():
-            return Visit.objects.filter(mentor=user).order_by('-start_date')
-
-        # Mentee sees visits where they have assigned competences
+            queryset = queryset.filter(mentor=user)
         elif user.groups.filter(name='Mentee').exists():
-            return Visit.objects.filter(days__assignments__mentee=user).distinct().order_by('-start_date')
+            queryset = queryset.filter(days__assignments__mentee=user).distinct()
+        elif not (user.groups.filter(name='Reviewer').exists() or user.is_superuser):
+            return Visit.objects.none()
 
-        # Otherwise, no visits
-        return Visit.objects.none()
+        # Custom filters
+        mentor_id = self.request.GET.get('mentor')
+        site_id = self.request.GET.get('site')
+        disease_id = self.request.GET.get('disease')
+        status = self.request.GET.get("status")
+        start_date = self.request.GET.get('start_date')
+        end_date = self.request.GET.get('end_date')
 
+        if mentor_id:
+            queryset = queryset.filter(mentor_id=mentor_id)
+        if site_id:
+            queryset = queryset.filter(site_id=site_id)
+        if disease_id:
+            queryset = queryset.filter(days__assignments__competence__disease_id=disease_id).distinct()
+        if start_date:
+            queryset = queryset.filter(start_date__gte=parse_date(start_date))
+        if end_date:
+            queryset = queryset.filter(end_date__lte=parse_date(end_date))
+        if status:
+            queryset = queryset.filter(status=status)
+
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['mentors'] = User.objects.filter(groups__name='Mentor')
+        context['sites'] = Site.objects.all()
+        context['diseases'] = Disease.objects.all()
+        context['selected_mentor'] = self.request.GET.get('mentor', '')
+        context['selected_site'] = self.request.GET.get('site', '')
+        context['selected_disease'] = self.request.GET.get('disease', '')
+        context['selected_status'] = self.request.GET.get('status', '')
+        context['start_date'] = self.request.GET.get('start_date', '')
+        context['end_date'] = self.request.GET.get('end_date', '')
+        
+        # Counter based on filtered queryset
+        context['visit_count'] = self.get_queryset().count()
+    
+        return context
 
 class VisitDetailView(LoginRequiredMixin, AdminCheckMixin, DetailView):
     model = Visit

@@ -10,7 +10,89 @@
   {% endif %}
 </div>
 
+<div class="card p-3 mb-4">
+  <form method="get" class="row g-3">
+    <!-- Mentor -->
+    <div class="col-md-3">
+      <label class="form-label">Mentor</label>
+      <select name="mentor" class="form-select">
+        <option value="">All</option>
+        {% for mentor in mentors %}
+          <option value="{{ mentor.id }}" {% if selected.mentor == mentor.id|stringformat:"s" %}selected{% endif %}>
+            {{ mentor.get_full_name|default:mentor.username }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Site -->
+    <div class="col-md-3">
+      <label class="form-label">Site</label>
+      <select name="site" class="form-select">
+        <option value="">All</option>
+        {% for site in sites %}
+          <option value="{{ site.id }}" {% if selected.site == site.id|stringformat:"s" %}selected{% endif %}>
+            {{ site.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Condition/Disease -->
+    <div class="col-md-3">
+      <label class="form-label">Condition</label>
+      <select name="disease" class="form-select">
+        <option value="">All</option>
+        {% for disease in diseases %}
+          <option value="{{ disease.id }}" {% if selected.disease == disease.id|stringformat:"s" %}selected{% endif %}>
+            {{ disease.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Status -->
+    <div class="col-md-3">
+      <label class="form-label">Status</label>
+      <select name="status" class="form-select">
+        <option value="">All</option>
+        <option value="pending" {% if selected.status == "pending" %}selected{% endif %}>Pending</option>
+        <option value="assigned" {% if selected.status == "assigned" %}selected{% endif %}>Assigned</option>
+        <option value="in_progress" {% if selected.status == "in_progress" %}selected{% endif %}>In Progress</option>
+        <option value="completed" {% if selected.status == "completed" %}selected{% endif %}>Completed</option>
+        <option value="reviewed" {% if selected.status == "reviewed" %}selected{% endif %}>Reviewed</option>
+      </select>
+    </div>
+
+    <!-- Date Range -->
+    <div class="col-md-3">
+      <label class="form-label">From</label>
+      <input type="date" name="start_date" class="form-control" value="{{ selected.start_date }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">To</label>
+      <input type="date" name="end_date" class="form-control" value="{{ selected.end_date }}">
+    </div>
+
+    <!-- Buttons -->
+    <div class="col-md-3 d-flex align-items-end">
+      <button type="submit" class="btn btn-primary w-100">Filter</button>
+    </div>
+    <div class="col-md-3 d-flex align-items-end">
+      <a href="{% url 'mentorship:visit-list' %}" class="btn btn-outline-secondary w-100">Reset</a>
+    </div>
+  </form>
+</div>
+
 <h2>Visit Schedule</h2>
+
+<!-- Counter -->
+<!-- {% if visit_count > 0 %}
+    <p><strong>Total Visits: {{ visit_count }}</strong></p>
+{% else %}
+    <p>No records found.</p>
+{% endif %} -->
+
 
 {% if visits %}
 <table class="table table-striped">
@@ -31,23 +113,21 @@
       <td>
         {% if visit.diseases %}
         {% for disease in visit.diseases %}
-        {{ disease.name }}{% if not forloop.last %}, {% endif %}
+          {{ disease.name }}{% if not forloop.last %}, {% endif %}
         {% endfor %}
-        {% else %}
-        —
-        {% endif %}
+        {% else %}—{% endif %}
       </td>
       <td>{{ visit.site.name }}</td>
       <td>{{ visit.start_date|date:"M d, Y" }} – {{ visit.end_date|date:"M d, Y" }}</td>
       <td>
         {% if visit.status == 'pending' %}
-        <span class="badge bg-secondary">Pending</span>
+          <span class="badge bg-secondary">Pending</span>
         {% elif visit.status == 'assigned' or visit.status == 'in_progress' %}
-        <span class="badge bg-info">In Progress</span>
+          <span class="badge bg-info">In Progress</span>
         {% elif visit.status == 'completed' %}
-        <span class="badge bg-success">Completed</span>
+          <span class="badge bg-success">Completed</span>
         {% elif visit.status == 'reviewed' %}
-        <span class="badge bg-primary">Reviewed</span>
+          <span class="badge bg-primary">Reviewed</span>
         {% endif %}
       </td>
       {% if is_admin %}
@@ -56,9 +136,7 @@
         <a href="{% url 'mentorship:delete-visit' visit.pk %}" class="text-danger">Delete</a>
       </td>
       {% else %}
-      <td>
-        <a href="{% url 'mentorship:visit-detail' visit.pk %}">View</a>
-      </td>
+      <td><a href="{% url 'mentorship:visit-detail' visit.pk %}">View</a></td>
       {% endif %}
     </tr>
     {% endfor %}
