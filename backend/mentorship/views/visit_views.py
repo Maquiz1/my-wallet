@@ -20,7 +20,7 @@ class IndexView(TemplateView):
 
 class VisitListView(LoginRequiredMixin, ListView):
     model = Visit
-    template_name = 'mentorship/visit_list.html'
+    template_name = 'mentorship/visits/visit_list.html'
     context_object_name = 'visits'
     ordering = ['-start_date']
 

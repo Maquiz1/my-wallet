@@ -15,6 +15,13 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+# Visit Days List
+class VisitDayListView(LoginRequiredMixin, ListView):
+    model = VisitDay
+    template_name = 'mentorship/visit_days/visit_day_list.html'
+    context_object_name = 'visit_days'
+    ordering = ['-date']
+    
 class VisitDayDetailView(LoginRequiredMixin, DetailView):
     model = VisitDay
     template_name = 'mentorship/visit_day_detail.html'

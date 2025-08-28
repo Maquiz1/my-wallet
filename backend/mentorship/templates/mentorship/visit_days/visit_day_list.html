@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Logbook - Mentorship Days{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <a href="{% url 'dashboard:dashboard' %}" class="btn btn-outline-secondary">← Back to Dashboard</a>
+</div>
+
+<h2>Mentorship Days</h2>
+
+<!-- Counter -->
+{% if visitday_count > 0 %}
+    <p><strong>Total Days: {{ visitday_count }}</strong></p>
+{% else %}
+    <p>No records found.</p>
+{% endif %}
+
+{% if visit_days %}
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Visit</th>
+      <th>Date</th>
+      <th>Mentor</th>
+      <th>Site</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for day in visit_days %}
+    <tr>
+      <td>{{ day.visit }}</td>
+      <td>{{ day.date|date:"M d, Y" }}</td>
+      <td>{{ day.visit.mentor.get_full_name|default:day.visit.mentor.username }}</td>
+      <td>{{ day.visit.site.name }}</td>
+      <td>{{ day.status|capfirst }}</td>
+      <td>
+        <!-- <a href="{% url 'mentorship:visit-day-detail' day.pk %}">View</a> -->
+        <a href="#">View</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No mentorship days found.</p>
+{% endif %}
+{% endblock %}

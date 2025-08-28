@@ -12,10 +12,28 @@ from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse
 from .mixins import AdminCheckMixin, RoleRequiredMixin
 from django.views import View
+from django.db.models import Q
+from django.db.models import Count
 
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
+
+
+# Competence List / Assessed Competences
+class CompetenceListView(LoginRequiredMixin, ListView):
+    model = Competence
+    template_name = 'mentorship/competences/competence_list.html'
+    context_object_name = 'competences'
+
+    def get_queryset(self):
+        # Only show competences that have been assigned/completed if needed
+        return Competence.objects.annotate(
+            assigned_count=Count(
+                'assignedcompetence',
+                filter=Q(assignedcompetence__status__in=['completed', 'reviewed'])
+            )
+        ).order_by('-assigned_count')
 
 class CompetenceByDiseaseView(View):
     def get(self, request, *args, **kwargs):

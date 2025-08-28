@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Logbook - Assessments{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <a href="{% url 'dashboard:dashboard' %}" class="btn btn-outline-secondary">← Back to Dashboard</a>
+</div>
+
+<h2>Assessments</h2>
+
+<!-- Counter -->
+{% if assignment_count > 0 %}
+    <p><strong>Total Assessments: {{ assignment_count }}</strong></p>
+{% else %}
+    <p>No records found.</p>
+{% endif %}
+
+{% if assignments %}
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Mentee</th>
+      <th>Competence</th>
+      <th>Visit Day</th>
+      <th>Mentor</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for ac in assignments %}
+    <tr>
+      <td>{{ ac.mentee.get_full_name|default:ac.mentee.username }}</td>
+      <td>{{ ac.competence.name }}</td>
+      <td>{{ ac.visit_day.date|date:"M d, Y" }}</td>
+      <td>{{ ac.assigned_by.get_full_name|default:ac.assigned_by.username }}</td>
+      <td>{{ ac.status|capfirst }}</td>
+      <td>
+        <!-- <a href="{% url 'mentorship:assigned-competence-detail' ac.pk %}">View</a> -->
+        <a href="#">View</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No assessments found.</p>
+{% endif %}
+{% endblock %}

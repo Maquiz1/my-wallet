@@ -108,6 +108,14 @@ class MenteeSelfAssessmentView(LoginRequiredMixin, AdminCheckMixin, RoleRequired
     def get_success_url(self):
         return reverse_lazy('mentorship:visit-day-detail', kwargs={'pk': self.object.visit_day.id})
 
+
+# Assessments List
+class AssignedCompetenceListView(LoginRequiredMixin, ListView):
+    model = AssignedCompetence
+    template_name = 'mentorship/assessments/assigned_competence_list.html'
+    context_object_name = 'assignments'
+    ordering = ['-created_at']
+    
 class AllAssessmentsListView(LoginRequiredMixin, AdminCheckMixin, RoleRequiredMixin, ListView):
     model = AssignedCompetence
     template_name = 'mentorship/all_assessments.html'

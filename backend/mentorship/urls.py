@@ -15,7 +15,10 @@ from mentorship.views import (
     MentorGradeView,
     MenteeSelfAssessmentView,
     AllAssessmentsListView,
-    AssignedCompetenceDeleteView
+    AssignedCompetenceDeleteView,
+    VisitDayListView,
+    AssignedCompetenceListView,
+    CompetenceListView,
 )
 
 # from mentorship.views import visit_views
@@ -33,14 +36,19 @@ urlpatterns = [
     path('visit/<int:pk>/delete/', VisitDeleteView.as_view(), name='delete-visit'),
 
     # Visit Days
+    path('visit-days/', VisitDayListView.as_view(), name='visit-day-list'),
     path('visit-day/<int:pk>/edit/', VisitDayUpdateView.as_view(), name='edit-visit-day'),
     path('visit-day/<int:pk>/delete/', VisitDayDeleteView.as_view(), name='delete-visit-day'),
     path('visit-day/<int:pk>/', VisitDayDetailView.as_view(), name='visit-day-detail'),
 
     # Assign Competencies
+    path('competences/', CompetenceListView.as_view(), name='competence-list'),
+    path('competences/<int:pk>/', CompetenceListView.as_view(), name='competence-detail'),
     path('visit-day/<int:visit_day_id>/assign/', AssignedCompetenceView.as_view(), name='assign-competence'),  # Mentor only
 
     # Assigned Competence
+    path('assessments/', AssignedCompetenceListView.as_view(), name='assigned-competence-list'),
+    path('assessments/<int:pk>/', AssignedCompetenceListView.as_view(), name='assigned-competence-detail'),
     path('assigned-competence/<int:pk>/edit/', AssignedCompetenceUpdateView.as_view(), name='assigned-competence-edit'),
     path('assigned-competence/<int:pk>/view/', AssignedCompetenceDetailView.as_view(), name='assigned-competence-view'),
     path('assigned-competence/<int:pk>/delete/', AssignedCompetenceDeleteView.as_view(), name='assigned-competence-delete'),

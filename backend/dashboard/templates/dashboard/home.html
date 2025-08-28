@@ -41,7 +41,7 @@ Dashboard — {{ user.get_full_name|default:user.username }}
                 <p class="card-text fs-5">{{ visitday_count }} Days</p>
             </div>
             <div class="card-footer bg-transparent border-0">
-                <a href="{% url 'mentorship:visit-list' %}" class="text-white text-decoration-underline">View Days</a>
+                <a href="{% url 'mentorship:visit-day-list' %}" class="text-white text-decoration-underline">View Days</a>
             </div>
         </div>
     </div>
@@ -55,7 +55,7 @@ Dashboard — {{ user.get_full_name|default:user.username }}
                 <p class="card-text fs-5">{{ assignment_count }}</p>
             </div>
             <div class="card-footer bg-transparent border-0">
-                <a href="{% url 'mentorship:visit-list' %}" class="text-white text-decoration-underline">View
+                <a href="{% url 'mentorship:assigned-competence-list' %}" class="text-white text-decoration-underline">View
                     Assessments</a>
             </div>
         </div>
@@ -75,7 +75,7 @@ Dashboard — {{ user.get_full_name|default:user.username }}
                 </div>
             </div>
             <div class="card-footer bg-transparent border-0">
-                <a href="{% url 'mentorship:visit-list' %}" class="text-white text-decoration-underline">View
+                <a href="{% url 'mentorship:competence-list' %}" class="text-white text-decoration-underline">View
                     Assignments</a>
             </div>
         </div>
