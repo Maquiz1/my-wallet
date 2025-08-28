@@ -128,6 +128,12 @@ class Visit(models.Model):
         Helper to update status from VisitDay without triggering recursive calls.
         """
         self.update_status()
+        
+    @property
+    def diseases(self):
+        return Disease.objects.filter(
+            assignedcompetence__visit_day__visit=self
+        ).distinct()
 
 
 class VisitDay(models.Model):
