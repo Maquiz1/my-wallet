@@ -14,6 +14,7 @@ from .mixins import AdminCheckMixin, RoleRequiredMixin
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
+
 class VisitDayDetailView(LoginRequiredMixin, DetailView):
     model = VisitDay
     template_name = 'mentorship/visit_day_detail.html'

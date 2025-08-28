@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_tags %}
 
 {% block title %}Logbook - Mentorship Visit Day Details{% endblock %}
 
@@ -45,8 +46,13 @@
       {% for assignment in assignments %}
       <li class="mb-3 p-2 border-bottom">
         <p><strong>Patient ID (PID):</strong> {{ assignment.pid|default:"Not provided" }}</p>
-        <p><strong>Competence:</strong> {{ assignment.competence.name }}{% if assignment.competence.description %} - {{
-          assignment.competence.description }}{% endif %}</p>
+        <p>
+          <strong>Competence:</strong> 
+          {{ assignment.competence.name }}
+          {% if assignment.competence.description %} - 
+          {{ assignment.competence.description|default:"No description provided"|trim }}
+          {% endif %}
+        </p>
 
         {% if assignment.mentor_description %}
         <p><strong>Mentor Guidance:</strong> {{ assignment.mentor_description }}</p>
