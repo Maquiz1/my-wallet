@@ -1,9 +1,3 @@
-# logbook
-
-Mentorship App
-
-Perfect! Here's a ready-to-use **Markdown documentation** for your Logbook project. You can save it as `LOGBOOK_PROJECT.md` in your repository:
-
 ```markdown
 # Logbook – Mentorship Management System
 
@@ -159,15 +153,171 @@ python manage.py test mentorship
 * **Email:** [manquiz92@gmail.com](mailto:manquiz92@gmail.com)
 * **Location:** Dar es Salaam, Tanzania
 
+
+
+
+
+```markdown
+# 📝 Logbook – Mentorship Management System
+
+![Django](https://img.shields.io/badge/Django-4.2-green)
+![Python](https://img.shields.io/badge/Python-3.10-blue)
+![License](https://img.shields.io/badge/License-MIT-lightgrey)
+
 ---
 
-*This documentation is intended for future reference, maintenance, and showcasing in portfolios.*
+## **Project Overview**
+**Logbook** is a Django web application designed to manage mentorship activities in clinical and healthcare settings. It allows administrators, mentors, and mentees to track mentorship visits, assign competencies, and monitor progress efficiently.
 
+**Key Features:**
+- Mentorship visit scheduling and management  
+- Assignment of competencies to mentees  
+- Progress tracking and assessment reporting  
+- Role-based access (Admin, Mentor, Mentee, Reviewer)  
+- Dashboards with charts and statistics  
+
+**Tech Stack:**  
+- **Backend:** Django, Django REST Framework  
+- **Frontend:** Django Templates + Bootstrap 5  
+- **Database:** PostgreSQL / MySQL  
+- **Charts & Visualization:** Chart.js  
+
+---
+
+## **Features**
+
+### ✅ User Management
+- User registration, login, and logout  
+- Password reset and email verification  
+- Role-based permissions: Admin, Mentor, Mentee, Reviewer  
+
+### ✅ Mentorship Visits
+- Create, update, and delete visits (Admin)  
+- Assign mentors to sites and diseases  
+- Filter visits by mentor, site, disease, status, and date range  
+- View detailed visit information  
+
+### ✅ Assignments & Competencies
+- Assign competencies to mentees for each visit day  
+- Track completion progress  
+- Dashboard shows top competencies per disease  
+
+### ✅ Dashboards & Reports
+- Charts for visits per site and mentee submissions  
+- Recent activity feed  
+- Progress indicators for visits, assessments, and competencies  
+
+---
+
+## **Project Structure**
+```
+
+logbook/
+├── backend/
+│   ├── mentorship/
+│   │   ├── models.py          # Visit, VisitDay, AssignedCompetence
+│   │   ├── views.py           # ListView, DetailView, CreateView, Dashboard
+│   │   ├── forms.py           # Visit and Assignment forms
+│   │   ├── templates/         # HTML templates
+│   │   └── tests.py           # Unit tests for the app
+│   ├── clinical/
+│   │   ├── models.py          # Disease, Competence
+│   │   └── ...
+│   └── src/
+│       └── settings.py
+└── frontend/                  # React app (if used)
+
+````
+
+---
+
+## **Installation & Setup**
+
+1. **Clone the repository:**  
+```bash
+git clone <repo-url>
+cd logbook/backend
+````
+
+2. **Create a virtual environment & install dependencies:**
+
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+3. **Setup the database:**
+
+```bash
+python manage.py migrate
+python manage.py createsuperuser
+```
+
+4. **Run the development server:**
+
+```bash
+python manage.py runserver
+```
+
+5. **Access the app:**
+   Visit `http://127.0.0.1:8000/` in your browser
+
+---
+
+## **Screenshots / Demo**
+
+> Include screenshots of key pages here:
+
+* Dashboard
+* Visit List with filters
+* Add Visit form
+* Assignment / Competence page
+* Charts for visits and submissions
+
+---
+
+## **Testing**
+
+* Tests are located in `mentorship/tests.py`
+* Run tests with:
+
+```bash
+python manage.py test mentorship
 ```
 
 ---
 
-If you want, I can **also create a version ready for GitHub README** with **badges, live demo link, and nicer formatting** so it looks professional in your portfolio.  
+## **Future Improvements**
 
-Do you want me to do that?
+* Export reports to Excel/PDF
+* Email/SMS notifications for new visits or assignments
+* Mobile-friendly frontend (React or responsive templates)
+* Advanced analytics and KPI tracking
+
+---
+
+## **Contribution & Maintenance**
+
+* Follows Django best practices
+* Clean separation of forms, views, and templates
+* Uses `get_queryset` and `get_context_data` for filtering and dashboard data
+* Easy to extend with additional roles, sites, or reporting features
+
+---
+
+## **Author & Contact**
+
+**Developer:** Winstone Makwesheni
+**Email:** [manquiz92@gmail.com](mailto:manquiz92@gmail.com)
+**Location:** Dar es Salaam, Tanzania
+
+---
+
+**License:** MIT License
+
+---
+
+> This project is production-ready and can be deployed for clinical mentorship management.
+
 ```
