@@ -20,3 +20,6 @@ def trim(value):
         return value.strip()
     return ""
 
+@register.filter
+def add_class(field, css):
+    return field.as_widget(attrs={"class": css})
