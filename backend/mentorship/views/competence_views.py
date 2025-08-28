@@ -178,7 +178,7 @@ class AssignedCompetenceDetailView(LoginRequiredMixin, AdminCheckMixin, DetailVi
 class AssignedCompetenceUpdateView(LoginRequiredMixin, AdminCheckMixin, UpdateView):
     model = AssignedCompetence
     form_class = AssignedCompetenceForm
-    template_name = 'mentorship/assigned_competence_form.html'
+    template_name = 'mentorship/assignments/assigned_competence_form.html'
 
     def form_valid(self, form):
         form.instance.updated_by = self.request.user

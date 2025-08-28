@@ -128,7 +128,7 @@ class AllAssessmentsListView(LoginRequiredMixin, AdminCheckMixin, RoleRequiredMi
     
 class AssignedCompetenceDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = AssignedCompetence
-    template_name = 'mentorship/assigned_competence_confirm_delete.html'
+    template_name = 'mentorship/assignments/assigned_competence_confirm_delete.html'
 
     def test_func(self):
         assignment = self.get_object()
