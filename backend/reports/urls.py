@@ -26,9 +26,15 @@ app_name = "reports"
 
 urlpatterns = [
     path('grade-summary/', GradeSummaryReportView.as_view(), name='grade-summary'),
+    path("reports/grade/visualization/", GradeVisualizationReportView.as_view(), name="grade-visualization"),
     path('grade-summary/export/excel/', GradeSummaryExportExcelView.as_view(), name='grade-summary-excel'),
     path('grade-summary/export/pdf/', GradeSummaryExportPDFView.as_view(), name='grade-summary-pdf'),
+
     # ===========================
+    # Grade Visualization Reports
+    # ===========================
+    path('grade-summary/', CompetenceSummaryReportView.as_view(), name='competence-summary'),
+    path("reports/grade/visualization/", CompetenceVisualizationReportView.as_view(), name="competence-visualization"),
     # Dashboard Reports
     # ===========================
     path("reports/dashboard/general/", GeneralDashboardReportView.as_view(), name="general-dashboard"),

@@ -55,53 +55,97 @@
     </div>
 
     <!-- Mentor Grades Table -->
-    <h4>Mentor Grades</h4>
-    <p>Total Assignments: <strong>{{ mentor_total }}</strong></p>
+    <h4>Mentor Grades (Total: {{ mentor_total }})</h4>
     <table class="table table-striped table-bordered mb-4">
         <thead class="table-dark">
             <tr>
-                <th>Grade Label</th>
+                <th>Grade</th>
                 <th>Count</th>
-                <th>Percentage (%)</th>
+                <th>Percentage</th>
+                <th>Visual</th>
             </tr>
         </thead>
         <tbody>
             {% for row in mentor_summary %}
-            <tr>
-                <td><span class="badge bg-primary">{{ row.grade }}</span></td>
-                <td>{{ row.count }}</td>
-                <td>{{ row.percentage }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="3">No data</td>
-            </tr>
+                {% if row.grade != "Not Graded" %}
+                <tr>
+                    <td>{{ row.grade }}</td>
+                    <td>{{ row.count }}</td>
+                    <td>{{ row.percentage }}%</td>
+                    <td>
+                        <div class="progress">
+                            <div class="progress-bar 
+                                {% if row.grade == 'Excellent' %}bg-success{% elif row.grade == 'Good' %}bg-info{% elif row.grade == 'Fair' %}bg-warning{% elif row.grade == 'Poor' %}bg-danger{% endif %}" 
+                                role="progressbar" style="width: {{ row.percentage }}%" aria-valuenow="{{ row.percentage }}" aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+            <!-- Not Graded at bottom -->
+            {% for row in mentor_summary %}
+                {% if row.grade == "Not Graded" %}
+                <tr class="table-warning">
+                    <td>{{ row.grade }}</td>
+                    <td>{{ row.count }}</td>
+                    <td>{{ row.percentage }}%</td>
+                    <td>
+                        <div class="progress">
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ row.percentage }}%" aria-valuenow="{{ row.percentage }}" aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
             {% endfor %}
         </tbody>
     </table>
 
     <!-- Mentee Grades Table -->
-    <h4>Mentee Grades</h4>
-    <p>Total Assignments: <strong>{{ mentee_total }}</strong></p>
+    <h4>Mentee Grades (Total: {{ mentee_total }})</h4>
     <table class="table table-striped table-bordered mb-4">
         <thead class="table-dark">
             <tr>
-                <th>Grade Label</th>
+                <th>Grade</th>
                 <th>Count</th>
-                <th>Percentage (%)</th>
+                <th>Percentage</th>
+                <th>Visual</th>
             </tr>
         </thead>
         <tbody>
             {% for row in mentee_summary %}
-            <tr>
-                <td><span class="badge bg-success">{{ row.grade }}</span></td>
-                <td>{{ row.count }}</td>
-                <td>{{ row.percentage }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="3">No data</td>
-            </tr>
+                {% if row.grade != "Not Graded" %}
+                <tr>
+                    <td>{{ row.grade }}</td>
+                    <td>{{ row.count }}</td>
+                    <td>{{ row.percentage }}%</td>
+                    <td>
+                        <div class="progress">
+                            <div class="progress-bar 
+                                {% if row.grade == 'Excellent' %}bg-success{% elif row.grade == 'Good' %}bg-info{% elif row.grade == 'Fair' %}bg-warning{% elif row.grade == 'Poor' %}bg-danger{% endif %}" 
+                                role="progressbar" style="width: {{ row.percentage }}%" aria-valuenow="{{ row.percentage }}" aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+            <!-- Not Graded at bottom -->
+            {% for row in mentee_summary %}
+                {% if row.grade == "Not Graded" %}
+                <tr class="table-warning">
+                    <td>{{ row.grade }}</td>
+                    <td>{{ row.count }}</td>
+                    <td>{{ row.percentage }}%</td>
+                    <td>
+                        <div class="progress">
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ row.percentage }}%" aria-valuenow="{{ row.percentage }}" aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
             {% endfor %}
         </tbody>
     </table>

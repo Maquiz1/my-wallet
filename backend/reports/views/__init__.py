@@ -5,4 +5,7 @@ from .location_views import *
 from .general_report_view import *
 from .general_visualization_view import *
 from .general_dashboard_view import *
+from .competence_summary_report_view import *
+from .competence_summary_visualization_view import *
 from .grade_summary_report_view import *
+from .grade_summary_visualization_view import *

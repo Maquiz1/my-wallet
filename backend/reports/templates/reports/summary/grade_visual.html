@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Reports | Grade Summary{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Grade Summary Report</h2>
+
+    <!-- Filters -->
+    <form method="get" class="row g-3 mb-3">
+        <div class="col-md-3">
+            <label for="disease" class="form-label">Disease</label>
+            <select id="disease" name="disease" class="form-select">
+                <option value="all" {% if selected_disease == "all" %}selected{% endif %}>All</option>
+                {% for disease in diseases %}
+                    <option value="{{ disease.id }}" {% if selected_disease|stringformat:"s" == disease.id|stringformat:"s" %}selected{% endif %}>
+                        {{ disease.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label for="site" class="form-label">Site</label>
+            <select id="site" name="site" class="form-select">
+                <option value="all" {% if selected_site == "all" %}selected{% endif %}>All</option>
+                {% for site in sites %}
+                    <option value="{{ site.id }}" {% if selected_site|stringformat:"s" == site.id|stringformat:"s" %}selected{% endif %}>
+                        {{ site.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label for="user_filter" class="form-label">User Type</label>
+            <select id="user_filter" name="user_filter" class="form-select">
+                <option value="all" {% if user_filter == "all" %}selected{% endif %}>All</option>
+                <option value="mentor" {% if user_filter == "mentor" %}selected{% endif %}>Mentor</option>
+                <option value="mentee" {% if user_filter == "mentee" %}selected{% endif %}>Mentee</option>
+            </select>
+        </div>
+
+        <div class="col-md-3 align-self-end">
+            <button type="submit" class="btn btn-primary w-100">Filter</button>
+        </div>
+    </form>
+
+    <!-- Export & Reset Buttons -->
+    <div class="mb-3">
+        <a href="{% url 'reports:grade-summary-excel' %}?disease={{ selected_disease }}&site={{ selected_site }}&user_filter={{ user_filter }}" class="btn btn-success me-2">Export Excel</a>
+        <a href="{% url 'reports:grade-summary-pdf' %}?disease={{ selected_disease }}&site={{ selected_site }}&user_filter={{ user_filter }}" class="btn btn-danger me-2">Export PDF</a>
+        <a href="{% url 'reports:grade-summary' %}" class="btn btn-secondary">Reset Filters</a>
+    </div>
+
+    <!-- Mentor Grades Table -->
+    <h4>Mentor Grades (Total: {{ mentor_total }})</h4>
+    <table class="table table-striped table-bordered mb-3">
+        <thead class="table-dark">
+            <tr>
+                <th>Grade</th>
+                <th>Count</th>
+                <th>Percentage (%)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in mentor_summary %}
+            <tr>
+                <td>{{ row.grade }}</td>
+                <td>{{ row.count }}</td>
+                <td>{{ row.percentage }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">No data</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Mentor Charts -->
+    <div class="row mb-5">
+        <div class="col-md-6">
+            <canvas id="mentorPieChart" style="max-height:300px;"></canvas>
+        </div>
+        <div class="col-md-6">
+            <canvas id="mentorDoughnutChart" style="max-height:300px;"></canvas>
+        </div>
+    </div>
+
+    <!-- Mentee Grades Table -->
+    <h4>Mentee Grades (Total: {{ mentee_total }})</h4>
+    <table class="table table-striped table-bordered mb-3">
+        <thead class="table-dark">
+            <tr>
+                <th>Grade</th>
+                <th>Count</th>
+                <th>Percentage (%)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in mentee_summary %}
+            <tr>
+                <td>{{ row.grade }}</td>
+                <td>{{ row.count }}</td>
+                <td>{{ row.percentage }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">No data</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Mentee Charts -->
+    <div class="row mb-5">
+        <div class="col-md-6">
+            <canvas id="menteePieChart" style="max-height:300px;"></canvas>
+        </div>
+        <div class="col-md-6">
+            <canvas id="menteeDoughnutChart" style="max-height:300px;"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js and datalabels plugin -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script>
+    function getChartData(summary) {
+        let labels = [];
+        let data = [];
+        summary.forEach(item => {
+            labels.push(item.grade);
+            data.push(item.count);
+        });
+        return { labels: labels, data: data };
+    }
+
+    // Generate dynamic colors
+    function getColors(length) {
+        const baseColors = ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40'];
+        const colors = [];
+        for(let i=0;i<length;i++){
+            colors.push(baseColors[i % baseColors.length]);
+        }
+        return colors;
+    }
+
+    function createChart(ctx, type, summary) {
+        const chartData = getChartData(summary);
+        return new Chart(ctx, {
+            type: type,
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    data: chartData.data,
+                    backgroundColor: getColors(chartData.data.length)
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    datalabels: {
+                        color: '#000',
+                        formatter: function(value, context) {
+                            let total = context.chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
+                            let percent = total ? (value/total*100).toFixed(2) : 0;
+                            return percent + '%';
+                        },
+                        font: { weight: 'bold' }
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+    }
+
+    // Mentor Charts
+    createChart(document.getElementById('mentorPieChart'), 'pie', {{ mentor_summary|safe }});
+    createChart(document.getElementById('mentorDoughnutChart'), 'doughnut', {{ mentor_summary|safe }});
+
+    // Mentee Charts
+    createChart(document.getElementById('menteePieChart'), 'pie', {{ mentee_summary|safe }});
+    createChart(document.getElementById('menteeDoughnutChart'), 'doughnut', {{ mentee_summary|safe }});
+</script>
+{% endblock %}

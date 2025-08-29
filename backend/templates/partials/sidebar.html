@@ -20,6 +20,9 @@
         </a>
         <ul class="submenu" id="reports-submenu">
             <li><a href="{% url 'reports:grade-summary' %}"><i class="fas fa-file-alt"></i> Grade Summary</a></li>
+            <li><a href="{% url 'reports:grade-visualization' %}"><i class="fas fa-file-alt"></i> Grade Visualization</a></li>
+            <li><a href="{% url 'reports:competence-summary' %}"><i class="fas fa-file-alt"></i> Competence Summary</a></li>
+            <li><a href="{% url 'reports:competence-visualization' %}"><i class="fas fa-file-alt"></i> Competence Visualization</a></li>
             <li><a href="{% url 'reports:general-dashboard' %}"><i class="fas fa-tachometer-alt"></i> General
                     Dashboard</a></li>
             {% if user.is_authenticated and user.is_superuser %}
