@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Reports | Grade Summary{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Grade Summary Report</h2>
+
+    <!-- Filters -->
+    <form method="get" class="row g-3 mb-3">
+        <div class="col-md-3">
+            <label for="disease" class="form-label">Disease</label>
+            <select id="disease" name="disease" class="form-select">
+                <option value="all" {% if selected_disease == "all" %}selected{% endif %}>All</option>
+                {% for disease in diseases %}
+                    <option value="{{ disease.id }}" {% if selected_disease|stringformat:"s" == disease.id|stringformat:"s" %}selected{% endif %}>
+                        {{ disease.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label for="site" class="form-label">Site</label>
+            <select id="site" name="site" class="form-select">
+                <option value="all" {% if selected_site == "all" %}selected{% endif %}>All</option>
+                {% for site in sites %}
+                    <option value="{{ site.id }}" {% if selected_site|stringformat:"s" == site.id|stringformat:"s" %}selected{% endif %}>
+                        {{ site.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label for="user_filter" class="form-label">User Type</label>
+            <select id="user_filter" name="user_filter" class="form-select">
+                <option value="all" {% if user_filter == "all" %}selected{% endif %}>All</option>
+                <option value="mentor" {% if user_filter == "mentor" %}selected{% endif %}>Mentor</option>
+                <option value="mentee" {% if user_filter == "mentee" %}selected{% endif %}>Mentee</option>
+            </select>
+        </div>
+
+        <div class="col-md-3 align-self-end">
+            <button type="submit" class="btn btn-primary w-100">Filter</button>
+        </div>
+    </form>
+
+    <!-- Export & Reset Buttons -->
+    <div class="mb-3">
+        <a href="{% url 'reports:grade-summary-excel' %}?disease={{ selected_disease }}&site={{ selected_site }}&user_filter={{ user_filter }}" class="btn btn-success me-2">Export Excel</a>
+        <a href="{% url 'reports:grade-summary-pdf' %}?disease={{ selected_disease }}&site={{ selected_site }}&user_filter={{ user_filter }}" class="btn btn-danger me-2">Export PDF</a>
+        <a href="{% url 'reports:grade-summary' %}" class="btn btn-secondary">Reset Filters</a>
+    </div>
+
+    <!-- Mentor Grades Table -->
+    <h4>Mentor Grades</h4>
+    <p>Total Assignments: <strong>{{ mentor_total }}</strong></p>
+    <table class="table table-striped table-bordered mb-4">
+        <thead class="table-dark">
+            <tr>
+                <th>Grade Label</th>
+                <th>Count</th>
+                <th>Percentage (%)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in mentor_summary %}
+            <tr>
+                <td><span class="badge bg-primary">{{ row.grade }}</span></td>
+                <td>{{ row.count }}</td>
+                <td>{{ row.percentage }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">No data</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Mentee Grades Table -->
+    <h4>Mentee Grades</h4>
+    <p>Total Assignments: <strong>{{ mentee_total }}</strong></p>
+    <table class="table table-striped table-bordered mb-4">
+        <thead class="table-dark">
+            <tr>
+                <th>Grade Label</th>
+                <th>Count</th>
+                <th>Percentage (%)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in mentee_summary %}
+            <tr>
+                <td><span class="badge bg-success">{{ row.grade }}</span></td>
+                <td>{{ row.count }}</td>
+                <td>{{ row.percentage }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">No data</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

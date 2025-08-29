@@ -1,5 +1,8 @@
 from django.urls import path
 from reports.views import (
+    GradeSummaryReportView,
+    GradeSummaryExportPDFView,
+    GradeSummaryExportExcelView,
     UsersReportView,
     UsersExportExcelView,
     UsersExportPDFView,
@@ -22,6 +25,9 @@ from reports.views import (
 app_name = "reports"
 
 urlpatterns = [
+    path('grade-summary/', GradeSummaryReportView.as_view(), name='grade-summary'),
+    path('grade-summary/export/excel/', GradeSummaryExportExcelView.as_view(), name='grade-summary-excel'),
+    path('grade-summary/export/pdf/', GradeSummaryExportPDFView.as_view(), name='grade-summary-pdf'),
     # ===========================
     # Dashboard Reports
     # ===========================
