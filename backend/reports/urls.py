@@ -36,8 +36,8 @@ urlpatterns = [
     # ===========================
     # Grade Visualization Reports
     # ===========================
-    path('grade-summary/', CompetenceSummaryReportView.as_view(), name='competence-summary'),
-    path("reports/grade/visualization/", CompetenceVisualizationReportView.as_view(), name="competence-visualization"),
+    path('competence-summary/', CompetenceSummaryReportView.as_view(), name='competence-summary'),
+    path("reports/competence/visualization/", CompetenceVisualizationReportView.as_view(), name="competence-visualization"),
     # Dashboard Reports
     # ===========================
     path("reports/dashboard/general/", GeneralDashboardReportView.as_view(), name="general-dashboard"),
