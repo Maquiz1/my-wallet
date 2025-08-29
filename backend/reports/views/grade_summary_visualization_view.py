@@ -15,8 +15,8 @@ from locations.models import Site
 
 User = get_user_model()
 
-class GradeSummaryReportView(View):
-    template_name = "reports/summary/grade.html"
+class GradeVisualizationReportView(View):
+    template_name = "reports/summary/grade_visual.html"
 
     def get(self, request):
         # ----- Filters -----

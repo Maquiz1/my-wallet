@@ -20,6 +20,9 @@ from reports.views import (
     LocationsExportPDFView,
     DashboardExportExcelView,
     DashboardExportPDFView,
+    GradeVisualizationReportView,
+    CompetenceSummaryReportView,
+    CompetenceVisualizationReportView
 )
 
 app_name = "reports"
