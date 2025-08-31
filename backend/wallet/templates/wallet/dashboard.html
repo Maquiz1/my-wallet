@@ -1,0 +1,21 @@
+<h2>Wallet Balance: {{ wallet.balance }}</h2>
+<a href="{% url 'wallet:add_transaction' %}">Add Transaction</a>
+
+<table>
+    <tr>
+        <th>Date</th>
+        <th>Type</th>
+        <th>Category</th>
+        <th>Amount</th>
+        <th>Description</th>
+    </tr>
+    {% for t in transactions %}
+    <tr>
+        <td>{{ t.date }}</td>
+        <td>{{ t.type }}</td>
+        <td>{{ t.category }}</td>
+        <td>{{ t.amount }}</td>
+        <td>{{ t.description }}</td>
+    </tr>
+    {% endfor %}
+</table>

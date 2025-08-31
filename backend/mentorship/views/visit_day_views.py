@@ -10,6 +10,7 @@ from ..forms import VisitForm, VisitDayForm, AssignedCompetenceForm, MentorGrade
 from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse
 from .mixins import AdminCheckMixin, RoleRequiredMixin
+from django.db.models import Count
 
 from django.contrib.auth import get_user_model
 
@@ -21,6 +22,15 @@ class VisitDayListView(LoginRequiredMixin, ListView):
     template_name = 'mentorship/visit_days/visit_day_list.html'
     context_object_name = 'visit_days'
     ordering = ['-date']
+    
+    # def get_queryset(self):
+    #     # Group by distinct dates and count how many VisitDay records per date
+    #     return (
+    #         VisitDay.objects
+    #         .values("date")
+    #         .annotate(total=Count("id"))  # count visitdays per date
+    #         .order_by("-date")
+    #     )
     
 class VisitDayDetailView(LoginRequiredMixin, DetailView):
     model = VisitDay
